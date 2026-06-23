@@ -40,6 +40,7 @@ export default function NewAcquisitionPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [acquisitionId, setAcquisitionId] = useState<number | null>(null);
+  const [singleItem, setSingleItem] = useState(false);
 
   const [deal, setDeal] = useState<DealInfo>({
     description: "",
@@ -76,6 +77,15 @@ export default function NewAcquisitionPage() {
         notes: deal.notes.trim() || null,
       });
       setAcquisitionId(acquisition.id);
+      if (singleItem) {
+        setItems([
+          {
+            ...emptyItem(),
+            name: deal.description.trim(),
+            cost_basis: deal.total_cost,
+          },
+        ]);
+      }
       setStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -188,6 +198,11 @@ export default function NewAcquisitionPage() {
             value={deal.notes}
             onChange={(e) => setDeal({ ...deal, notes: e.target.value })}
           />
+          <Toggle
+            label="Just one item (skip retyping name/cost)"
+            checked={singleItem}
+            onChange={setSingleItem}
+          />
           <Button type="submit" disabled={saving} className="mt-2">
             {saving ? "Saving..." : "Next: Add items"}
           </Button>
@@ -218,7 +233,7 @@ export default function NewAcquisitionPage() {
             <div key={idx} className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-zinc-500">Item {idx + 1}</span>
-                {items.length > 1 && (
+                {!singleItem && items.length > 1 && (
                   <button
                     onClick={() => removeItem(idx)}
                     className="text-sm text-red-600"
@@ -280,9 +295,11 @@ export default function NewAcquisitionPage() {
             </div>
           ))}
 
-          <Button variant="secondary" type="button" onClick={addItem}>
-            + Add another item
-          </Button>
+          {!singleItem && (
+            <Button variant="secondary" type="button" onClick={addItem}>
+              + Add another item
+            </Button>
+          )}
 
           <Button type="button" onClick={handleItemsSubmit} disabled={saving} className="mt-2">
             {saving ? "Saving..." : "Done"}

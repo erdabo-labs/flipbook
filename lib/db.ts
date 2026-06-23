@@ -348,6 +348,40 @@ export async function markItemKept(itemId: number, notes?: string | null): Promi
   await updateItemStatus(itemId, "kept", notes ?? undefined);
 }
 
+export interface ClosedItemRow {
+  transaction_id: number;
+  transaction_date: string;
+  cash_amount: number;
+  cost_basis: number;
+  acquired_date: string | null;
+}
+
+interface ClosedItemRawRow {
+  transaction_id: number;
+  item: { cost_basis: number; acquisition: { acquired_date: string } | null } | null;
+  transaction: { transaction_date: string; cash_amount: number } | null;
+}
+
+export async function getClosedItemRows(): Promise<ClosedItemRow[]> {
+  const { data, error } = await supabase
+    .from("transaction_item")
+    .select(
+      "transaction_id, item:item_id(cost_basis, acquisition:acquisition_id(acquired_date)), transaction:transaction_id(transaction_date, cash_amount)"
+    )
+    .eq("direction", "outbound");
+  if (error) throw error;
+
+  return ((data || []) as unknown as ClosedItemRawRow[])
+    .filter((row) => row.transaction)
+    .map((row) => ({
+      transaction_id: row.transaction_id,
+      transaction_date: row.transaction!.transaction_date,
+      cash_amount: row.transaction!.cash_amount,
+      cost_basis: row.item?.cost_basis ?? 0,
+      acquired_date: row.item?.acquisition?.acquired_date ?? null,
+    }));
+}
+
 export async function updateItemDetails(
   itemId: number,
   input: { name: string; cost_basis: number; category: string | null; condition: ItemCondition | null }

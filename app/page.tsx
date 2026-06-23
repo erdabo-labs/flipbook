@@ -12,6 +12,7 @@ import { AcquisitionCard } from "@/components/AcquisitionCard";
 import { LinkButton } from "@/components/ui/Button";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { formatDate, formatPnl, pnlColorClass } from "@/lib/format";
+import { supabase } from "@/lib/supabase";
 
 type RecentTx = Transaction & { items: { item_id: number; item_name: string; direction: string }[] };
 
@@ -37,7 +38,12 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Flipbook</h1>
-        <LinkButton href="/acquisitions/new">+ Log deal</LinkButton>
+        <div className="flex gap-2">
+          <LinkButton href="/metrics" variant="secondary">
+            Metrics
+          </LinkButton>
+          <LinkButton href="/acquisitions/new">+ Log deal</LinkButton>
+        </div>
       </div>
 
       {loading && <LoadingState />}
@@ -91,6 +97,14 @@ export default function DashboardPage() {
               </div>
             )}
           </section>
+
+          <button
+            type="button"
+            onClick={() => supabase.auth.signOut()}
+            className="mt-8 text-sm text-zinc-400 underline"
+          >
+            Sign out
+          </button>
         </>
       )}
     </div>
