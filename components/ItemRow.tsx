@@ -6,7 +6,7 @@ import type { Item, ItemCondition } from "@/lib/types";
 import { CATEGORIES, CONDITIONS } from "@/lib/types";
 import { StatusBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
-import { markItemKept, updateItemDetails } from "@/lib/db";
+import { markItemKept, splitItem, updateItemDetails, updateItemStatus } from "@/lib/db";
 import { Input, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -22,12 +22,17 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [splitting, setSplitting] = useState(false);
   const [working, setWorking] = useState(false);
   const [name, setName] = useState(item.name);
   const [costBasis, setCostBasis] = useState(String(item.cost_basis));
   const [category, setCategory] = useState(item.category ?? "");
   const [condition, setCondition] = useState<ItemCondition | "">(item.condition ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [splitName1, setSplitName1] = useState("");
+  const [splitCost1, setSplitCost1] = useState("");
+  const [splitName2, setSplitName2] = useState("");
+  const [splitCost2, setSplitCost2] = useState("");
   const isActionable = item.status === "inventory" || item.status === "listed";
 
   async function handleMarkKept() {
@@ -38,6 +43,48 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
     } finally {
       setWorking(false);
       setOpen(false);
+    }
+  }
+
+  async function handleMarkListed() {
+    setWorking(true);
+    try {
+      await updateItemStatus(item.id, "listed");
+      onChanged();
+    } finally {
+      setWorking(false);
+      setOpen(false);
+    }
+  }
+
+  function startSplit() {
+    setSplitName1(item.name);
+    setSplitCost1(String(Math.round((item.cost_basis / 2) * 100) / 100));
+    setSplitName2(item.name);
+    setSplitCost2(String(Math.round((item.cost_basis / 2) * 100) / 100));
+    setError(null);
+    setSplitting(true);
+  }
+
+  async function handleSaveSplit() {
+    if (!splitName1.trim() || !splitName2.trim()) {
+      setError("Both names are required.");
+      return;
+    }
+    setWorking(true);
+    setError(null);
+    try {
+      await splitItem(item, [
+        { name: splitName1.trim(), cost_basis: parseFloat(splitCost1) || 0 },
+        { name: splitName2.trim(), cost_basis: parseFloat(splitCost2) || 0 },
+      ]);
+      onChanged();
+      setSplitting(false);
+      setOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setWorking(false);
     }
   }
 
@@ -102,6 +149,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
           onClick={() => {
             setOpen(false);
             setEditing(false);
+            setSplitting(false);
           }}
         >
           <div
@@ -150,6 +198,52 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                   </Button>
                 </div>
               </div>
+            ) : splitting ? (
+              <div className="flex flex-col gap-3">
+                <p className="px-2 font-medium">Split item</p>
+                <p className="px-2 text-sm text-zinc-500">
+                  Replaces &quot;{item.name}&quot; with two items. Adjust names and cost basis as needed.
+                </p>
+                {error && <p className="px-2 text-sm text-red-600">{error}</p>}
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input label="Item 1 name" value={splitName1} onChange={(e) => setSplitName1(e.target.value)} />
+                  </div>
+                  <div className="w-28">
+                    <Input
+                      label="Cost basis"
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      value={splitCost1}
+                      onChange={(e) => setSplitCost1(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input label="Item 2 name" value={splitName2} onChange={(e) => setSplitName2(e.target.value)} />
+                  </div>
+                  <div className="w-28">
+                    <Input
+                      label="Cost basis"
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      value={splitCost2}
+                      onChange={(e) => setSplitCost2(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="mt-1 flex gap-2">
+                  <Button variant="secondary" type="button" onClick={() => setSplitting(false)} className="flex-1">
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleSaveSplit} disabled={working} className="flex-1">
+                    {working ? "Saving..." : "Split"}
+                  </Button>
+                </div>
+              </div>
             ) : (
               <>
                 <p className="mb-3 px-2 font-medium">{item.name}</p>
@@ -164,6 +258,10 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                         onClick={() => router.push(`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${item.id}&type=trade`)}
                       />
                       <SheetAction label="Mark kept" onClick={handleMarkKept} disabled={working} />
+                      {item.status === "inventory" && (
+                        <SheetAction label="Mark as pending sell" onClick={handleMarkListed} disabled={working} />
+                      )}
+                      <SheetAction label="Split item" onClick={startSplit} />
                     </>
                   )}
                   <SheetAction label="Cancel" onClick={() => setOpen(false)} muted />

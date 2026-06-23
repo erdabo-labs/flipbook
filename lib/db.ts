@@ -111,6 +111,43 @@ export async function createItems(
   return data as Item[];
 }
 
+export async function updateAcquisition(
+  id: number,
+  input: {
+    description: string;
+    acquired_date: string;
+    total_cost: number;
+    source: string | null;
+    source_type: SourceType;
+    deal_group: string | null;
+    notes: string | null;
+  }
+): Promise<void> {
+  const { error } = await supabase.from("acquisition").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function splitItem(
+  item: Item,
+  parts: { name: string; cost_basis: number }[]
+): Promise<void> {
+  const { error: insertError } = await supabase.from("item").insert(
+    parts.map((p) => ({
+      acquisition_id: item.acquisition_id,
+      name: p.name,
+      category: item.category,
+      cost_basis: p.cost_basis,
+      condition: item.condition,
+      used_personally: item.used_personally,
+      notes: item.notes,
+    }))
+  );
+  if (insertError) throw insertError;
+
+  const { error: deleteError } = await supabase.from("item").delete().eq("id", item.id);
+  if (deleteError) throw deleteError;
+}
+
 export async function getAcquisition(id: number): Promise<Acquisition | null> {
   const { data, error } = await supabase
     .from("acquisition")

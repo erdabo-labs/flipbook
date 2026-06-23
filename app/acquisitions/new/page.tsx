@@ -116,12 +116,16 @@ export default function NewAcquisitionPage() {
     }
     setSaving(true);
     try {
+      const blankCount = validItems.filter((i) => !i.cost_basis.trim()).length;
+      const explicitSum = validItems.reduce((sum, i) => sum + (parseFloat(i.cost_basis) || 0), 0);
+      const splitCost = blankCount > 0 ? (totalCostNum - explicitSum) / blankCount : 0;
+
       await createItems(
         validItems.map((i) => ({
           acquisition_id: acquisitionId,
           name: i.name.trim(),
           category: i.category || null,
-          cost_basis: parseFloat(i.cost_basis) || 0,
+          cost_basis: i.cost_basis.trim() ? parseFloat(i.cost_basis) || 0 : splitCost,
           condition: i.condition || null,
           used_personally: i.used_personally,
           notes: i.notes.trim() || null,
