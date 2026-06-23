@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
+  deleteTransaction,
   getAcquisition,
   getAcquisitionPnl,
   getItemsForAcquisition,
   getTransactionsForAcquisition,
   updateAcquisition,
+  updateTransaction,
 } from "@/lib/db";
 import type { Acquisition, AcquisitionPnl, Item, SourceType, Transaction } from "@/lib/types";
 import { SOURCES } from "@/lib/types";
@@ -40,6 +42,16 @@ export default function AcquisitionDetailPage() {
     source: "",
     source_type: "flip_purchase" as SourceType,
     deal_group: "",
+    notes: "",
+  });
+  const [editingTxId, setEditingTxId] = useState<number | null>(null);
+  const [txSaving, setTxSaving] = useState(false);
+  const [txError, setTxError] = useState<string | null>(null);
+  const [txForm, setTxForm] = useState({
+    transaction_date: "",
+    cash_amount: "",
+    platform: "",
+    counterparty: "",
     notes: "",
   });
 
@@ -106,6 +118,55 @@ export default function AcquisitionDetailPage() {
       setEditError(err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  function startEditTx(t: RecentTx) {
+    setTxForm({
+      transaction_date: t.transaction_date,
+      cash_amount: String(t.cash_amount),
+      platform: t.platform ?? "",
+      counterparty: t.counterparty ?? "",
+      notes: t.notes ?? "",
+    });
+    setTxError(null);
+    setEditingTxId(t.id);
+  }
+
+  async function handleSaveTx() {
+    if (editingTxId == null) return;
+    setTxSaving(true);
+    setTxError(null);
+    try {
+      await updateTransaction(editingTxId, {
+        transaction_date: txForm.transaction_date,
+        cash_amount: parseFloat(txForm.cash_amount) || 0,
+        platform: txForm.platform.trim() || null,
+        counterparty: txForm.counterparty.trim() || null,
+        notes: txForm.notes.trim() || null,
+      });
+      await load();
+      setEditingTxId(null);
+    } catch (err) {
+      setTxError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setTxSaving(false);
+    }
+  }
+
+  async function handleUndoTx() {
+    if (editingTxId == null) return;
+    if (!window.confirm("Undo this transaction? Items will go back to inventory.")) return;
+    setTxSaving(true);
+    setTxError(null);
+    try {
+      await deleteTransaction(editingTxId);
+      await load();
+      setEditingTxId(null);
+    } catch (err) {
+      setTxError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setTxSaving(false);
     }
   }
 
@@ -250,20 +311,77 @@ export default function AcquisitionDetailPage() {
           <EmptyState title="No transactions yet" description="Record a sale, trade, or bundle sale." />
         ) : (
           <div className="flex flex-col gap-2">
-            {transactions.map((t) => (
-              <div key={t.id} className="rounded-xl border border-zinc-200 bg-white p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium capitalize">{t.type.replace("_", " ")}</span>
-                  <span className={`text-sm font-semibold ${pnlColorClass(t.cash_amount)}`}>
-                    {formatPnl(t.cash_amount)}
-                  </span>
+            {transactions.map((t) =>
+              editingTxId === t.id ? (
+                <div key={t.id} className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4">
+                  <p className="font-medium capitalize">{t.type.replace("_", " ")}</p>
+                  {txError && <p className="text-sm text-red-600">{txError}</p>}
+                  <Input
+                    label="Date"
+                    type="date"
+                    value={txForm.transaction_date}
+                    onChange={(e) => setTxForm({ ...txForm, transaction_date: e.target.value })}
+                  />
+                  <Input
+                    label="Cash amount"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    value={txForm.cash_amount}
+                    onChange={(e) => setTxForm({ ...txForm, cash_amount: e.target.value })}
+                  />
+                  <Input
+                    label="Platform (optional)"
+                    value={txForm.platform}
+                    onChange={(e) => setTxForm({ ...txForm, platform: e.target.value })}
+                  />
+                  <Input
+                    label="Counterparty (optional)"
+                    value={txForm.counterparty}
+                    onChange={(e) => setTxForm({ ...txForm, counterparty: e.target.value })}
+                  />
+                  <Textarea
+                    label="Notes (optional)"
+                    value={txForm.notes}
+                    onChange={(e) => setTxForm({ ...txForm, notes: e.target.value })}
+                  />
+                  <div className="mt-1 flex gap-2">
+                    <Button variant="secondary" type="button" onClick={() => setEditingTxId(null)} className="flex-1">
+                      Cancel
+                    </Button>
+                    <Button type="button" onClick={handleSaveTx} disabled={txSaving} className="flex-1">
+                      {txSaving ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleUndoTx}
+                    disabled={txSaving}
+                    className="text-sm text-red-600 underline"
+                  >
+                    Undo this transaction (items return to inventory)
+                  </button>
                 </div>
-                <p className="mt-1 text-xs text-zinc-500">{formatDate(t.transaction_date)}</p>
-                <p className="mt-1 text-sm text-zinc-700">
-                  {t.items.map((i) => `${i.direction === "outbound" ? "−" : "+"} ${i.item_name}`).join(", ")}
-                </p>
-              </div>
-            ))}
+              ) : (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => startEditTx(t)}
+                  className="rounded-xl border border-zinc-200 bg-white p-3 text-left active:bg-zinc-50"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium capitalize">{t.type.replace("_", " ")}</span>
+                    <span className={`text-sm font-semibold ${pnlColorClass(t.cash_amount)}`}>
+                      {formatPnl(t.cash_amount)}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">{formatDate(t.transaction_date)}</p>
+                  <p className="mt-1 text-sm text-zinc-700">
+                    {t.items.map((i) => `${i.direction === "outbound" ? "−" : "+"} ${i.item_name}`).join(", ")}
+                  </p>
+                </button>
+              )
+            )}
           </div>
         )}
       </section>

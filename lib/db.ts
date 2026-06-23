@@ -390,6 +390,43 @@ export async function markItemKept(itemId: number, notes?: string | null): Promi
   await updateItemStatus(itemId, "kept", notes ?? undefined);
 }
 
+export async function updateTransaction(
+  id: number,
+  input: {
+    transaction_date: string;
+    cash_amount: number;
+    platform: string | null;
+    counterparty: string | null;
+    notes: string | null;
+  }
+): Promise<void> {
+  const { error } = await supabase.from("transaction").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteTransaction(transactionId: number): Promise<void> {
+  const { data: tis, error: tiError } = await supabase
+    .from("transaction_item")
+    .select("item_id, direction")
+    .eq("transaction_id", transactionId);
+  if (tiError) throw tiError;
+
+  const outboundIds = (tis || []).filter((ti) => ti.direction === "outbound").map((ti) => ti.item_id);
+  const inboundIds = (tis || []).filter((ti) => ti.direction === "inbound").map((ti) => ti.item_id);
+
+  if (outboundIds.length > 0) {
+    const { error } = await supabase.from("item").update({ status: "inventory" }).in("id", outboundIds);
+    if (error) throw error;
+  }
+  if (inboundIds.length > 0) {
+    const { error } = await supabase.from("item").delete().in("id", inboundIds);
+    if (error) throw error;
+  }
+
+  const { error: txError } = await supabase.from("transaction").delete().eq("id", transactionId);
+  if (txError) throw txError;
+}
+
 export interface ClosedItemRow {
   transaction_id: number;
   transaction_date: string;

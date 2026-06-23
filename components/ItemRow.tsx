@@ -6,7 +6,7 @@ import type { Item, ItemCondition } from "@/lib/types";
 import { CATEGORIES, CONDITIONS } from "@/lib/types";
 import { StatusBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
-import { markItemKept, markItemListed, splitItem, updateItemDetails } from "@/lib/db";
+import { markItemKept, markItemListed, splitItem, updateItemDetails, updateItemStatus } from "@/lib/db";
 import { Input, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -41,6 +41,17 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
     setWorking(true);
     try {
       await markItemKept(item.id);
+      onChanged();
+    } finally {
+      setWorking(false);
+      setOpen(false);
+    }
+  }
+
+  async function handleUndoKept() {
+    setWorking(true);
+    try {
+      await updateItemStatus(item.id, "inventory");
       onChanged();
     } finally {
       setWorking(false);
@@ -307,6 +318,14 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                       />
                       <SheetAction label="Split item" onClick={startSplit} />
                     </>
+                  )}
+                  {item.status === "kept" && (
+                    <SheetAction label="Move back to inventory" onClick={handleUndoKept} disabled={working} />
+                  )}
+                  {(item.status === "sold" || item.status === "traded" || item.status === "bundled") && (
+                    <p className="px-3 py-2 text-sm text-zinc-400">
+                      To undo this, edit or delete the related transaction.
+                    </p>
                   )}
                   <SheetAction label="Cancel" onClick={() => setOpen(false)} muted />
                 </div>
