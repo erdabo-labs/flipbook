@@ -275,9 +275,17 @@ export default function AcquisitionDetailPage() {
             {formatPnl(pnl.realized_pnl)}
           </span>
         </div>
+        {(pnl.listed_value > 0 || pnl.pending_value > 0) && (
+          <div className="mt-1 flex justify-between text-sm">
+            <span className="text-zinc-500">Potential cash</span>
+            <span className="font-medium text-orange-600">
+              {formatCurrency(pnl.listed_value + pnl.pending_value)}
+            </span>
+          </div>
+        )}
         {hasInventory && (
           <p className="mt-2 text-xs text-amber-600">
-            {pnl.items_in_inventory} item{pnl.items_in_inventory === 1 ? "" : "s"} still pending sale
+            {pnl.items_in_inventory} item{pnl.items_in_inventory === 1 ? "" : "s"} still in inventory
           </p>
         )}
         {allocationMismatch && (

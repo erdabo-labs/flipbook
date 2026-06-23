@@ -9,6 +9,7 @@ function NewTransactionContent() {
   const acquisitionId = searchParams.get("acquisition_id");
   const itemId = searchParams.get("item_id");
   const type = searchParams.get("type");
+  const cash = searchParams.get("cash");
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
@@ -17,6 +18,7 @@ function NewTransactionContent() {
         initialAcquisitionId={acquisitionId ? Number(acquisitionId) : null}
         initialItemId={itemId ? Number(itemId) : null}
         initialKind={type === "trade" ? "trade" : "sale"}
+        initialCashAmount={cash ?? undefined}
       />
     </div>
   );

@@ -238,6 +238,11 @@ export async function markItemListed(itemId: number, listed_price: number | null
   if (error) throw error;
 }
 
+export async function markItemPending(itemId: number, pending_price: number | null): Promise<void> {
+  const { error } = await supabase.from("item").update({ status: "pending", pending_price }).eq("id", itemId);
+  if (error) throw error;
+}
+
 export async function getInventory(): Promise<CurrentInventoryRow[]> {
   const { data, error } = await supabase
     .from("current_inventory")
@@ -251,7 +256,7 @@ export async function getInventoryItems(acquisitionId?: number): Promise<Item[]>
   let query = supabase
     .from("item")
     .select("*")
-    .in("status", ["inventory", "listed"])
+    .in("status", ["inventory", "listed", "pending"])
     .order("created_at", { ascending: true });
   if (acquisitionId) {
     query = query.eq("acquisition_id", acquisitionId);

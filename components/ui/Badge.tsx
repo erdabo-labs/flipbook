@@ -3,6 +3,7 @@ import type { ItemStatus } from "@/lib/types";
 const STATUS_STYLES: Record<ItemStatus, string> = {
   inventory: "bg-zinc-100 text-zinc-700",
   listed: "bg-blue-100 text-blue-700",
+  pending: "bg-orange-100 text-orange-700",
   sold: "bg-green-100 text-green-700",
   traded: "bg-purple-100 text-purple-700",
   kept: "bg-amber-100 text-amber-700",
@@ -12,6 +13,7 @@ const STATUS_STYLES: Record<ItemStatus, string> = {
 const STATUS_LABELS: Record<ItemStatus, string> = {
   inventory: "Inventory",
   listed: "Listed",
+  pending: "Pending sale",
   sold: "Sold",
   traded: "Traded",
   kept: "Kept",

@@ -18,11 +18,12 @@ CREATE TABLE item (
     category        TEXT,
     cost_basis      NUMERIC(10,2) NOT NULL DEFAULT 0,
     status          TEXT NOT NULL DEFAULT 'inventory'
-                    CHECK (status IN ('inventory','listed','sold','traded','kept','bundled')),
+                    CHECK (status IN ('inventory','listed','pending','sold','traded','kept','bundled')),
     used_personally BOOLEAN NOT NULL DEFAULT FALSE,
     condition       TEXT CHECK (condition IN ('new','like_new','good','fair','parts')),
     notes           TEXT,
     listed_price    NUMERIC(10,2),
+    pending_price   NUMERIC(10,2),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -62,9 +63,11 @@ item_agg AS (
     SELECT
         acquisition_id,
         COUNT(*) AS total_items,
-        COUNT(*) FILTER (WHERE status = 'inventory') AS items_in_inventory,
+        COUNT(*) FILTER (WHERE status IN ('inventory','listed','pending')) AS items_in_inventory,
         COUNT(*) FILTER (WHERE status = 'kept') AS items_kept,
-        COALESCE(SUM(cost_basis) FILTER (WHERE status IN ('sold', 'traded')), 0) AS cost_sold
+        COALESCE(SUM(cost_basis) FILTER (WHERE status IN ('sold', 'traded')), 0) AS cost_sold,
+        COALESCE(SUM(listed_price) FILTER (WHERE status = 'listed'), 0) AS listed_value,
+        COALESCE(SUM(pending_price) FILTER (WHERE status = 'pending'), 0) AS pending_value
     FROM item
     GROUP BY acquisition_id
 )
@@ -79,7 +82,9 @@ SELECT
     COALESCE(c.cash_received, 0) - COALESCE(ia.cost_sold, 0) AS realized_pnl,
     COALESCE(ia.items_in_inventory, 0) AS items_in_inventory,
     COALESCE(ia.items_kept, 0) AS items_kept,
-    COALESCE(ia.total_items, 0) AS total_items
+    COALESCE(ia.total_items, 0) AS total_items,
+    COALESCE(ia.listed_value, 0) AS listed_value,
+    COALESCE(ia.pending_value, 0) AS pending_value
 FROM acquisition a
 LEFT JOIN cash_agg c ON c.acquisition_id = a.id
 LEFT JOIN item_agg ia ON ia.acquisition_id = a.id;
@@ -87,14 +92,14 @@ LEFT JOIN item_agg ia ON ia.acquisition_id = a.id;
 CREATE VIEW current_inventory AS
 SELECT
     i.id, i.name, i.category, i.cost_basis, i.condition,
-    i.used_personally, i.notes, i.status, i.listed_price,
+    i.used_personally, i.notes, i.status, i.listed_price, i.pending_price,
     a.id AS acquisition_id,
     a.description AS acquisition_desc,
     a.acquired_date,
     a.deal_group
 FROM item i
 JOIN acquisition a ON a.id = i.acquisition_id
-WHERE i.status IN ('inventory','listed');
+WHERE i.status IN ('inventory','listed','pending');
 
 CREATE VIEW summary_stats AS
 SELECT
@@ -103,6 +108,8 @@ SELECT
     (SELECT COALESCE(SUM(cash_amount), 0) FROM transaction) AS total_cash_received,
     (SELECT COALESCE(SUM(cash_amount), 0) FROM transaction)
         - (SELECT COALESCE(SUM(cost_basis), 0) FROM item WHERE status IN ('sold', 'traded')) AS total_pnl,
-    (SELECT COUNT(*) FROM item WHERE status IN ('inventory','listed')) AS items_in_inventory,
-    (SELECT COALESCE(SUM(cost_basis), 0) FROM item WHERE status IN ('inventory','listed')) AS capital_tied_up
+    (SELECT COUNT(*) FROM item WHERE status IN ('inventory','listed','pending')) AS items_in_inventory,
+    (SELECT COALESCE(SUM(cost_basis), 0) FROM item WHERE status IN ('inventory','listed','pending')) AS capital_tied_up,
+    (SELECT COALESCE(SUM(listed_price), 0) FROM item WHERE status = 'listed') AS listed_value,
+    (SELECT COALESCE(SUM(pending_price), 0) FROM item WHERE status = 'pending') AS pending_value
 FROM (SELECT 1) AS dummy;

@@ -22,10 +22,12 @@ export function TransactionForm({
   initialAcquisitionId,
   initialItemId,
   initialKind,
+  initialCashAmount,
 }: {
   initialAcquisitionId: number | null;
   initialItemId: number | null;
   initialKind: Kind;
+  initialCashAmount?: string;
 }) {
   const router = useRouter();
   const [acquisitions, setAcquisitions] = useState<{ id: number; description: string; acquired_date: string }[]>([]);
@@ -33,7 +35,7 @@ export function TransactionForm({
   const [items, setItems] = useState<Item[]>([]);
   const [kind, setKind] = useState<Kind>(initialKind);
   const [selectedIds, setSelectedIds] = useState<number[]>(initialItemId ? [initialItemId] : []);
-  const [cashAmount, setCashAmount] = useState("");
+  const [cashAmount, setCashAmount] = useState(initialCashAmount ?? "");
   const [receivedItemName, setReceivedItemName] = useState("");
   const [date, setDate] = useState(today);
   const [platform, setPlatform] = useState("");
@@ -86,7 +88,7 @@ export function TransactionForm({
 
     const invalidItems = selectedIds.filter((id) => {
       const item = items.find((i) => i.id === id);
-      return !item || (item.status !== "inventory" && item.status !== "listed");
+      return !item || (item.status !== "inventory" && item.status !== "listed" && item.status !== "pending");
     });
     if (invalidItems.length > 0) {
       setError("One or more selected items are no longer available.");

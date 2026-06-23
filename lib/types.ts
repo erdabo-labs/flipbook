@@ -3,6 +3,7 @@ export type SourceType = "flip_purchase" | "personal_item" | "trade_received";
 export type ItemStatus =
   | "inventory"
   | "listed"
+  | "pending"
   | "sold"
   | "traded"
   | "kept"
@@ -37,6 +38,7 @@ export interface Item {
   condition: ItemCondition | null;
   notes: string | null;
   listed_price: number | null;
+  pending_price: number | null;
   created_at: string;
 }
 
@@ -70,6 +72,8 @@ export interface AcquisitionPnl {
   items_in_inventory: number;
   items_kept: number;
   total_items: number;
+  listed_value: number;
+  pending_value: number;
 }
 
 export interface CurrentInventoryRow {
@@ -82,6 +86,7 @@ export interface CurrentInventoryRow {
   notes: string | null;
   status: ItemStatus;
   listed_price: number | null;
+  pending_price: number | null;
   acquisition_id: number;
   acquisition_desc: string;
   acquired_date: string;
@@ -95,6 +100,8 @@ export interface SummaryStats {
   total_pnl: number;
   items_in_inventory: number;
   capital_tied_up: number;
+  listed_value: number;
+  pending_value: number;
 }
 
 export const SOURCES = [
