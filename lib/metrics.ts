@@ -1,41 +1,60 @@
 import type { ClosedItemRow } from "./db";
 
+export interface DealSummary {
+  transaction_id: number;
+  date: string;
+  pnl: number;
+  items: string[];
+}
+
 export interface MonthlyPnl {
   month: string;
   realized_pnl: number;
   deals_closed: number;
+  deals: DealSummary[];
 }
 
 export function computeMonthlyPnl(rows: ClosedItemRow[]): MonthlyPnl[] {
-  const byTransaction = new Map<number, { date: string; cash_amount: number; cost_basis: number }>();
+  const byTransaction = new Map<
+    number,
+    { date: string; cash_amount: number; cost_basis: number; items: string[] }
+  >();
   for (const row of rows) {
     const existing = byTransaction.get(row.transaction_id);
     if (existing) {
       existing.cost_basis += row.cost_basis;
+      existing.items.push(row.item_name);
     } else {
       byTransaction.set(row.transaction_id, {
         date: row.transaction_date,
         cash_amount: row.cash_amount,
         cost_basis: row.cost_basis,
+        items: [row.item_name],
       });
     }
   }
 
-  const byMonth = new Map<string, { pnl: number; count: number }>();
-  for (const tx of byTransaction.values()) {
+  const byMonth = new Map<string, { pnl: number; deals: DealSummary[] }>();
+  for (const [transactionId, tx] of byTransaction) {
     const month = tx.date.slice(0, 7);
     const pnl = tx.cash_amount - tx.cost_basis;
+    const deal: DealSummary = { transaction_id: transactionId, date: tx.date, pnl, items: tx.items };
     const existing = byMonth.get(month);
     if (existing) {
       existing.pnl += pnl;
-      existing.count += 1;
+      existing.deals.push(deal);
     } else {
-      byMonth.set(month, { pnl, count: 1 });
+      byMonth.set(month, { pnl, deals: [deal] });
     }
   }
 
   return Array.from(byMonth.entries())
-    .map(([month, { pnl, count }]) => ({ month, realized_pnl: pnl, deals_closed: count }))
+    .map(([month, { pnl, deals }]) => ({
+      month,
+      realized_pnl: pnl,
+      deals_closed: deals.length,
+      deals: deals.sort((a, b) => (a.date < b.date ? 1 : -1)),
+    }))
     .sort((a, b) => (a.month < b.month ? 1 : -1));
 }
 

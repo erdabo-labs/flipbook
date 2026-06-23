@@ -354,11 +354,16 @@ export interface ClosedItemRow {
   cash_amount: number;
   cost_basis: number;
   acquired_date: string | null;
+  item_name: string;
 }
 
 interface ClosedItemRawRow {
   transaction_id: number;
-  item: { cost_basis: number; acquisition: { acquired_date: string } | null } | null;
+  item: {
+    name: string;
+    cost_basis: number;
+    acquisition: { acquired_date: string } | null;
+  } | null;
   transaction: { transaction_date: string; cash_amount: number } | null;
 }
 
@@ -366,7 +371,7 @@ export async function getClosedItemRows(): Promise<ClosedItemRow[]> {
   const { data, error } = await supabase
     .from("transaction_item")
     .select(
-      "transaction_id, item:item_id(cost_basis, acquisition:acquisition_id(acquired_date)), transaction:transaction_id(transaction_date, cash_amount)"
+      "transaction_id, item:item_id(name, cost_basis, acquisition:acquisition_id(acquired_date)), transaction:transaction_id(transaction_date, cash_amount)"
     )
     .eq("direction", "outbound");
   if (error) throw error;
@@ -379,6 +384,7 @@ export async function getClosedItemRows(): Promise<ClosedItemRow[]> {
       cash_amount: row.transaction!.cash_amount,
       cost_basis: row.item?.cost_basis ?? 0,
       acquired_date: row.item?.acquisition?.acquired_date ?? null,
+      item_name: row.item?.name ?? "Unknown item",
     }));
 }
 

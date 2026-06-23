@@ -39,9 +39,6 @@ export default function DashboardPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Flipbook</h1>
         <div className="flex gap-2">
-          <LinkButton href="/metrics" variant="secondary">
-            Metrics
-          </LinkButton>
           <LinkButton href="/acquisitions/new">+ Log deal</LinkButton>
         </div>
       </div>

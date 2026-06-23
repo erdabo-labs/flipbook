@@ -7,6 +7,7 @@ const ITEMS = [
   { href: "/", label: "Dashboard", icon: "home" },
   { href: "/acquisitions", label: "Deals", icon: "list" },
   { href: "/inventory", label: "Inventory", icon: "box" },
+  { href: "/metrics", label: "Metrics", icon: "chart" },
   { href: "/transactions/new", label: "Add", icon: "plus" },
 ];
 
@@ -35,6 +36,12 @@ function Icon({ name }: { name: string }) {
       return (
         <svg className={common} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      );
+    case "chart":
+      return (
+        <svg className={common} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M4 20V10m6 10V4m6 16v-7" />
         </svg>
       );
     default:
