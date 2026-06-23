@@ -55,8 +55,8 @@ export default function NewAcquisitionPage() {
   const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
 
   const totalCostNum = parseFloat(deal.total_cost) || 0;
-  const allocated = items.reduce((sum, i) => sum + (parseFloat(i.cost_basis) || 0), 0);
-  const diff = totalCostNum - allocated;
+  const othersCost = items.slice(1).reduce((sum, i) => sum + (parseFloat(i.cost_basis) || 0), 0);
+  const firstItemCost = totalCostNum - othersCost;
 
   async function handleDealSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -116,20 +116,19 @@ export default function NewAcquisitionPage() {
     }
     setSaving(true);
     try {
-      const blankCount = validItems.filter((i) => !i.cost_basis.trim()).length;
-      const explicitSum = validItems.reduce((sum, i) => sum + (parseFloat(i.cost_basis) || 0), 0);
-      const splitCost = blankCount > 0 ? (totalCostNum - explicitSum) / blankCount : 0;
-
       await createItems(
-        validItems.map((i) => ({
-          acquisition_id: acquisitionId,
-          name: i.name.trim(),
-          category: i.category || null,
-          cost_basis: i.cost_basis.trim() ? parseFloat(i.cost_basis) || 0 : splitCost,
-          condition: i.condition || null,
-          used_personally: i.used_personally,
-          notes: i.notes.trim() || null,
-        }))
+        items
+          .map((i, idx) => ({ i, cost: idx === 0 ? firstItemCost : parseFloat(i.cost_basis) || 0 }))
+          .filter(({ i }) => i.name.trim())
+          .map(({ i, cost }) => ({
+            acquisition_id: acquisitionId,
+            name: i.name.trim(),
+            category: i.category || null,
+            cost_basis: cost,
+            condition: i.condition || null,
+            used_personally: i.used_personally,
+            notes: i.notes.trim() || null,
+          }))
       );
       router.push(`/acquisitions/${acquisitionId}`);
     } catch (err) {
@@ -217,18 +216,16 @@ export default function NewAcquisitionPage() {
         <div className="flex flex-col gap-4">
           <div className="rounded-lg bg-zinc-100 px-4 py-3 text-sm">
             <div className="flex justify-between">
-              <span>Allocated</span>
-              <span className="font-medium">{formatCurrency(allocated)}</span>
+              <span>Item 1 cost (auto)</span>
+              <span className="font-medium">{formatCurrency(firstItemCost)}</span>
             </div>
             <div className="flex justify-between">
               <span>Total cost</span>
               <span className="font-medium">{formatCurrency(totalCostNum)}</span>
             </div>
-            {Math.abs(diff) > 0.01 && (
+            {firstItemCost < -0.01 && (
               <p className="mt-1 text-xs text-amber-600">
-                {diff > 0
-                  ? `${formatCurrency(diff)} unallocated`
-                  : `Over-allocated by ${formatCurrency(-diff)}`}
+                Other items add up to {formatCurrency(-firstItemCost)} more than the total cost.
               </p>
             )}
           </div>
@@ -237,7 +234,7 @@ export default function NewAcquisitionPage() {
             <div key={idx} className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-zinc-500">Item {idx + 1}</span>
-                {!singleItem && items.length > 1 && (
+                {!singleItem && idx > 0 && (
                   <button
                     onClick={() => removeItem(idx)}
                     className="text-sm text-red-600"
@@ -265,15 +262,24 @@ export default function NewAcquisitionPage() {
                   </option>
                 ))}
               </Select>
-              <Input
-                label="Cost basis"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                value={item.cost_basis}
-                onChange={(e) => updateItem(idx, { cost_basis: e.target.value })}
-                placeholder="0.00"
-              />
+              {idx === 0 ? (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-medium text-zinc-700">Cost basis (auto)</span>
+                  <div className="min-h-11 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-base text-zinc-700">
+                    {formatCurrency(firstItemCost)}
+                  </div>
+                </div>
+              ) : (
+                <Input
+                  label="Cost basis (optional)"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={item.cost_basis}
+                  onChange={(e) => updateItem(idx, { cost_basis: e.target.value })}
+                  placeholder="0.00 — leave blank for $0"
+                />
+              )}
               <Select
                 label="Condition"
                 value={item.condition}
