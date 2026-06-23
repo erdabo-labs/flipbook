@@ -23,6 +23,17 @@ export function SummaryStats({ stats }: { stats: SummaryStatsType }) {
         <p className="text-xs font-medium text-zinc-500">Total deals</p>
         <p className="mt-1 text-2xl font-semibold">{stats.total_acquisitions}</p>
       </Card>
+      <Card className="col-span-2">
+        <p className="text-xs font-medium text-zinc-500">Potential cash</p>
+        <p className="mt-1 text-2xl font-semibold">
+          {formatCurrency(stats.listed_value + stats.pending_value)}
+        </p>
+        {(stats.listed_value > 0 || stats.pending_value > 0) && (
+          <p className="mt-1 text-xs text-zinc-500">
+            {formatCurrency(stats.listed_value)} listed &middot; {formatCurrency(stats.pending_value)} pending sale
+          </p>
+        )}
+      </Card>
     </div>
   );
 }

@@ -22,6 +22,14 @@ export default function InventoryPage() {
   }, []);
 
   const totalCapital = useMemo(() => rows.reduce((sum, r) => sum + r.cost_basis, 0), [rows]);
+  const potentialCash = useMemo(
+    () =>
+      rows.reduce(
+        (sum, r) => sum + (r.status === "listed" ? r.listed_price ?? 0 : r.status === "pending" ? r.pending_price ?? 0 : 0),
+        0
+      ),
+    [rows]
+  );
 
   const grouped = useMemo(() => {
     const map = new Map<number, { acquisition_id: number; desc: string; date: string; items: CurrentInventoryRow[] }>();
@@ -48,9 +56,15 @@ export default function InventoryPage() {
 
       {!loading && !error && (
         <>
-          <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4">
-            <p className="text-xs font-medium text-zinc-500">Capital tied up</p>
-            <p className="mt-1 text-2xl font-semibold">{formatCurrency(totalCapital)}</p>
+          <div className="mb-6 grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4">
+              <p className="text-xs font-medium text-zinc-500">Capital tied up</p>
+              <p className="mt-1 text-2xl font-semibold">{formatCurrency(totalCapital)}</p>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-white p-4">
+              <p className="text-xs font-medium text-zinc-500">Potential cash</p>
+              <p className="mt-1 text-2xl font-semibold">{formatCurrency(potentialCash)}</p>
+            </div>
           </div>
 
           {grouped.length === 0 ? (
@@ -75,7 +89,12 @@ export default function InventoryPage() {
                               {item.category ?? "Uncategorized"} &middot; {formatCurrency(item.cost_basis)}
                               {item.status === "listed" && item.listed_price != null && (
                                 <span className="ml-2 font-medium text-blue-600">
-                                  +{formatCurrency(item.listed_price)} pending
+                                  +{formatCurrency(item.listed_price)} asking
+                                </span>
+                              )}
+                              {item.status === "pending" && item.pending_price != null && (
+                                <span className="ml-2 font-medium text-orange-600">
+                                  +{formatCurrency(item.pending_price)} pending sale
                                 </span>
                               )}
                             </p>
@@ -86,11 +105,13 @@ export default function InventoryPage() {
                           <StatusBadge status={item.status} />
                         </div>
                         <LinkButton
-                          href={`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${item.id}`}
+                          href={`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${item.id}${
+                            item.pending_price != null ? `&cash=${item.pending_price}` : ""
+                          }`}
                           variant="secondary"
                           className="mt-3 w-full"
                         >
-                          Record sale
+                          {item.status === "pending" ? "Complete sale" : "Record sale"}
                         </LinkButton>
                       </div>
                     ))}

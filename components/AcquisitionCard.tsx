@@ -29,6 +29,11 @@ export function AcquisitionCard({ acquisition }: { acquisition: AcquisitionPnl }
             {formatPnl(acquisition.realized_pnl)}
           </span>
         </div>
+        {(acquisition.listed_value > 0 || acquisition.pending_value > 0) && (
+          <p className="mt-1 text-xs text-zinc-400">
+            Potential: {formatCurrency(acquisition.listed_value + acquisition.pending_value)}
+          </p>
+        )}
       </Card>
     </Link>
   );

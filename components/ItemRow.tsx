@@ -6,7 +6,7 @@ import type { Item, ItemCondition } from "@/lib/types";
 import { CATEGORIES, CONDITIONS } from "@/lib/types";
 import { StatusBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
-import { markItemKept, markItemListed, splitItem, updateItemDetails, updateItemStatus } from "@/lib/db";
+import { markItemKept, markItemListed, markItemPending, splitItem, updateItemDetails, updateItemStatus } from "@/lib/db";
 import { Input, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -25,6 +25,8 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
   const [splitting, setSplitting] = useState(false);
   const [listing, setListing] = useState(false);
   const [listedPrice, setListedPrice] = useState("");
+  const [markingPending, setMarkingPending] = useState(false);
+  const [pendingPrice, setPendingPrice] = useState("");
   const [working, setWorking] = useState(false);
   const [name, setName] = useState(item.name);
   const [costBasis, setCostBasis] = useState(String(item.cost_basis));
@@ -35,7 +37,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
   const [splitCost1, setSplitCost1] = useState("");
   const [splitName2, setSplitName2] = useState("");
   const [splitCost2, setSplitCost2] = useState("");
-  const isActionable = item.status === "inventory" || item.status === "listed";
+  const isActionable = item.status === "inventory" || item.status === "listed" || item.status === "pending";
 
   async function handleMarkKept() {
     setWorking(true);
@@ -78,6 +80,45 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
     } finally {
       setWorking(false);
     }
+  }
+
+  function startPending() {
+    setPendingPrice(item.pending_price != null ? String(item.pending_price) : item.listed_price != null ? String(item.listed_price) : "");
+    setError(null);
+    setMarkingPending(true);
+  }
+
+  async function handleSavePending() {
+    setWorking(true);
+    setError(null);
+    try {
+      await markItemPending(item.id, pendingPrice.trim() ? parseFloat(pendingPrice) || 0 : null);
+      onChanged();
+      setMarkingPending(false);
+      setOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function handleUndoPending() {
+    setWorking(true);
+    try {
+      await updateItemStatus(item.id, "listed");
+      onChanged();
+    } finally {
+      setWorking(false);
+      setOpen(false);
+    }
+  }
+
+  function completeSale() {
+    const price = item.pending_price ?? item.listed_price;
+    const cashParam = price != null ? `&cash=${price}` : "";
+    router.push(`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${item.id}${cashParam}`);
+    setOpen(false);
   }
 
   function startSplit() {
@@ -163,7 +204,12 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
             {item.condition && <> &middot; {CONDITION_LABELS[item.condition]}</>}
             {item.status === "listed" && item.listed_price != null && (
               <span className="ml-2 font-medium text-blue-600">
-                +{formatCurrency(item.listed_price)} pending
+                +{formatCurrency(item.listed_price)} asking
+              </span>
+            )}
+            {item.status === "pending" && item.pending_price != null && (
+              <span className="ml-2 font-medium text-orange-600">
+                +{formatCurrency(item.pending_price)} pending sale
               </span>
             )}
           </p>
@@ -179,6 +225,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
             setEditing(false);
             setSplitting(false);
             setListing(false);
+            setMarkingPending(false);
           }}
         >
           <div
@@ -275,9 +322,9 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
               </div>
             ) : listing ? (
               <div className="flex flex-col gap-3">
-                <p className="px-2 font-medium">Mark as pending sell</p>
+                <p className="px-2 font-medium">List item</p>
                 <p className="px-2 text-sm text-zinc-500">
-                  Optional asking price, shown as a pending amount until it actually sells.
+                  Optional asking price, shown until a buyer agrees to terms.
                 </p>
                 {error && <p className="px-2 text-sm text-red-600">{error}</p>}
                 <Input
@@ -294,6 +341,31 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                     Back
                   </Button>
                   <Button type="button" onClick={handleSaveListing} disabled={working} className="flex-1">
+                    {working ? "Saving..." : "List item"}
+                  </Button>
+                </div>
+              </div>
+            ) : markingPending ? (
+              <div className="flex flex-col gap-3">
+                <p className="px-2 font-medium">Mark pending sale</p>
+                <p className="px-2 text-sm text-zinc-500">
+                  A buyer agreed to terms. Enter the agreed price — it can differ from the asking price.
+                </p>
+                {error && <p className="px-2 text-sm text-red-600">{error}</p>}
+                <Input
+                  label="Agreed price (optional)"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={pendingPrice}
+                  onChange={(e) => setPendingPrice(e.target.value)}
+                  placeholder="0.00"
+                />
+                <div className="mt-1 flex gap-2">
+                  <Button variant="secondary" type="button" onClick={() => setMarkingPending(false)} className="flex-1">
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleSavePending} disabled={working} className="flex-1">
                     {working ? "Saving..." : "Mark pending"}
                   </Button>
                 </div>
@@ -303,6 +375,9 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                 <p className="mb-3 px-2 font-medium">{item.name}</p>
                 <div className="flex flex-col gap-1">
                   <SheetAction label="Edit details" onClick={startEdit} />
+                  {item.status === "pending" && (
+                    <SheetAction label="Complete sale" onClick={completeSale} />
+                  )}
                   {isActionable && (
                     <>
                       <SheetAction label="Mark sold" onClick={() => goToTransaction(item.id)} />
@@ -312,12 +387,23 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                         onClick={() => router.push(`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${item.id}&type=trade`)}
                       />
                       <SheetAction label="Mark kept" onClick={handleMarkKept} disabled={working} />
-                      <SheetAction
-                        label={item.status === "listed" ? "Edit asking price" : "Mark as pending sell"}
-                        onClick={startListing}
-                      />
+                      {item.status !== "pending" && (
+                        <SheetAction
+                          label={item.status === "listed" ? "Edit asking price" : "List item"}
+                          onClick={startListing}
+                        />
+                      )}
+                      {item.status === "listed" && (
+                        <SheetAction label="Mark pending sale" onClick={startPending} />
+                      )}
+                      {item.status === "pending" && (
+                        <SheetAction label="Edit pending price" onClick={startPending} />
+                      )}
                       <SheetAction label="Split item" onClick={startSplit} />
                     </>
+                  )}
+                  {item.status === "pending" && (
+                    <SheetAction label="Move back to listed" onClick={handleUndoPending} disabled={working} />
                   )}
                   {item.status === "kept" && (
                     <SheetAction label="Move back to inventory" onClick={handleUndoKept} disabled={working} />
