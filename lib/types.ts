@@ -36,6 +36,7 @@ export interface Item {
   used_personally: boolean;
   condition: ItemCondition | null;
   notes: string | null;
+  listed_price: number | null;
   created_at: string;
 }
 
@@ -80,6 +81,7 @@ export interface CurrentInventoryRow {
   used_personally: boolean;
   notes: string | null;
   status: ItemStatus;
+  listed_price: number | null;
   acquisition_id: number;
   acquisition_desc: string;
   acquired_date: string;

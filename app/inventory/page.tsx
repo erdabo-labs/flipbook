@@ -73,6 +73,11 @@ export default function InventoryPage() {
                             <p className="truncate font-medium">{item.name}</p>
                             <p className="text-sm text-zinc-500">
                               {item.category ?? "Uncategorized"} &middot; {formatCurrency(item.cost_basis)}
+                              {item.status === "listed" && item.listed_price != null && (
+                                <span className="ml-2 font-medium text-blue-600">
+                                  +{formatCurrency(item.listed_price)} pending
+                                </span>
+                              )}
                             </p>
                             <p className="mt-1 text-xs text-zinc-400">
                               Held {daysSince(item.acquired_date)} days &middot; acquired {formatDate(item.acquired_date)}

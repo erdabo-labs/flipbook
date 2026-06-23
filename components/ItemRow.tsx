@@ -6,7 +6,7 @@ import type { Item, ItemCondition } from "@/lib/types";
 import { CATEGORIES, CONDITIONS } from "@/lib/types";
 import { StatusBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
-import { markItemKept, splitItem, updateItemDetails, updateItemStatus } from "@/lib/db";
+import { markItemKept, markItemListed, splitItem, updateItemDetails } from "@/lib/db";
 import { Input, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -23,6 +23,8 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [splitting, setSplitting] = useState(false);
+  const [listing, setListing] = useState(false);
+  const [listedPrice, setListedPrice] = useState("");
   const [working, setWorking] = useState(false);
   const [name, setName] = useState(item.name);
   const [costBasis, setCostBasis] = useState(String(item.cost_basis));
@@ -46,14 +48,24 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
     }
   }
 
-  async function handleMarkListed() {
+  function startListing() {
+    setListedPrice(item.listed_price != null ? String(item.listed_price) : "");
+    setError(null);
+    setListing(true);
+  }
+
+  async function handleSaveListing() {
     setWorking(true);
+    setError(null);
     try {
-      await updateItemStatus(item.id, "listed");
+      await markItemListed(item.id, listedPrice.trim() ? parseFloat(listedPrice) || 0 : null);
       onChanged();
+      setListing(false);
+      setOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setWorking(false);
-      setOpen(false);
     }
   }
 
@@ -138,6 +150,11 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
           <p className="text-sm text-zinc-500">
             {formatCurrency(item.cost_basis)}
             {item.condition && <> &middot; {CONDITION_LABELS[item.condition]}</>}
+            {item.status === "listed" && item.listed_price != null && (
+              <span className="ml-2 font-medium text-blue-600">
+                +{formatCurrency(item.listed_price)} pending
+              </span>
+            )}
           </p>
         </div>
         <StatusBadge status={item.status} />
@@ -150,6 +167,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
             setOpen(false);
             setEditing(false);
             setSplitting(false);
+            setListing(false);
           }}
         >
           <div
@@ -244,6 +262,31 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                   </Button>
                 </div>
               </div>
+            ) : listing ? (
+              <div className="flex flex-col gap-3">
+                <p className="px-2 font-medium">Mark as pending sell</p>
+                <p className="px-2 text-sm text-zinc-500">
+                  Optional asking price, shown as a pending amount until it actually sells.
+                </p>
+                {error && <p className="px-2 text-sm text-red-600">{error}</p>}
+                <Input
+                  label="Asking price (optional)"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={listedPrice}
+                  onChange={(e) => setListedPrice(e.target.value)}
+                  placeholder="0.00"
+                />
+                <div className="mt-1 flex gap-2">
+                  <Button variant="secondary" type="button" onClick={() => setListing(false)} className="flex-1">
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleSaveListing} disabled={working} className="flex-1">
+                    {working ? "Saving..." : "Mark pending"}
+                  </Button>
+                </div>
+              </div>
             ) : (
               <>
                 <p className="mb-3 px-2 font-medium">{item.name}</p>
@@ -258,9 +301,10 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                         onClick={() => router.push(`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${item.id}&type=trade`)}
                       />
                       <SheetAction label="Mark kept" onClick={handleMarkKept} disabled={working} />
-                      {item.status === "inventory" && (
-                        <SheetAction label="Mark as pending sell" onClick={handleMarkListed} disabled={working} />
-                      )}
+                      <SheetAction
+                        label={item.status === "listed" ? "Edit asking price" : "Mark as pending sell"}
+                        onClick={startListing}
+                      />
                       <SheetAction label="Split item" onClick={startSplit} />
                     </>
                   )}

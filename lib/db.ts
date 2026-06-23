@@ -233,6 +233,11 @@ export async function updateItemStatus(
   if (error) throw error;
 }
 
+export async function markItemListed(itemId: number, listed_price: number | null): Promise<void> {
+  const { error } = await supabase.from("item").update({ status: "listed", listed_price }).eq("id", itemId);
+  if (error) throw error;
+}
+
 export async function getInventory(): Promise<CurrentInventoryRow[]> {
   const { data, error } = await supabase
     .from("current_inventory")

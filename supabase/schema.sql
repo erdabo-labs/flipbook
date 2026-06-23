@@ -22,6 +22,7 @@ CREATE TABLE item (
     used_personally BOOLEAN NOT NULL DEFAULT FALSE,
     condition       TEXT CHECK (condition IN ('new','like_new','good','fair','parts')),
     notes           TEXT,
+    listed_price    NUMERIC(10,2),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -62,7 +63,8 @@ item_agg AS (
         acquisition_id,
         COUNT(*) AS total_items,
         COUNT(*) FILTER (WHERE status = 'inventory') AS items_in_inventory,
-        COUNT(*) FILTER (WHERE status = 'kept') AS items_kept
+        COUNT(*) FILTER (WHERE status = 'kept') AS items_kept,
+        COALESCE(SUM(cost_basis) FILTER (WHERE status IN ('sold', 'traded')), 0) AS cost_sold
     FROM item
     GROUP BY acquisition_id
 )
@@ -74,7 +76,7 @@ SELECT
     a.deal_group,
     a.total_cost,
     COALESCE(c.cash_received, 0) AS cash_received,
-    COALESCE(c.cash_received, 0) - a.total_cost AS realized_pnl,
+    COALESCE(c.cash_received, 0) - COALESCE(ia.cost_sold, 0) AS realized_pnl,
     COALESCE(ia.items_in_inventory, 0) AS items_in_inventory,
     COALESCE(ia.items_kept, 0) AS items_kept,
     COALESCE(ia.total_items, 0) AS total_items
@@ -85,7 +87,7 @@ LEFT JOIN item_agg ia ON ia.acquisition_id = a.id;
 CREATE VIEW current_inventory AS
 SELECT
     i.id, i.name, i.category, i.cost_basis, i.condition,
-    i.used_personally, i.notes, i.status,
+    i.used_personally, i.notes, i.status, i.listed_price,
     a.id AS acquisition_id,
     a.description AS acquisition_desc,
     a.acquired_date,
@@ -95,18 +97,12 @@ JOIN acquisition a ON a.id = i.acquisition_id
 WHERE i.status IN ('inventory','listed');
 
 CREATE VIEW summary_stats AS
-WITH cash AS (
-    SELECT DISTINCT a.id AS acquisition_id, t.id AS transaction_id, t.cash_amount
-    FROM acquisition a
-    JOIN item i ON i.acquisition_id = a.id
-    JOIN transaction_item ti ON ti.item_id = i.id AND ti.direction = 'outbound'
-    JOIN transaction t ON t.id = ti.transaction_id
-)
 SELECT
     (SELECT COUNT(*) FROM acquisition) AS total_acquisitions,
     (SELECT COALESCE(SUM(total_cost), 0) FROM acquisition) AS total_invested,
-    COALESCE((SELECT SUM(cash_amount) FROM cash), 0) AS total_cash_received,
-    COALESCE((SELECT SUM(cash_amount) FROM cash), 0) - (SELECT COALESCE(SUM(total_cost), 0) FROM acquisition) AS total_pnl,
+    (SELECT COALESCE(SUM(cash_amount), 0) FROM transaction) AS total_cash_received,
+    (SELECT COALESCE(SUM(cash_amount), 0) FROM transaction)
+        - (SELECT COALESCE(SUM(cost_basis), 0) FROM item WHERE status IN ('sold', 'traded')) AS total_pnl,
     (SELECT COUNT(*) FROM item WHERE status IN ('inventory','listed')) AS items_in_inventory,
     (SELECT COALESCE(SUM(cost_basis), 0) FROM item WHERE status IN ('inventory','listed')) AS capital_tied_up
 FROM (SELECT 1) AS dummy;
