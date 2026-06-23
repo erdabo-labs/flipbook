@@ -12,7 +12,7 @@ import { AcquisitionCard } from "@/components/AcquisitionCard";
 import { LinkButton } from "@/components/ui/Button";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { formatDate, formatPnl, pnlColorClass } from "@/lib/format";
-import { supabase } from "@/lib/supabase";
+import { AUTH_STORAGE_KEY } from "@/app/login/page";
 
 type RecentTx = Transaction & { items: { item_id: number; item_name: string; direction: string }[] };
 
@@ -100,7 +100,10 @@ export default function DashboardPage() {
 
           <button
             type="button"
-            onClick={() => supabase.auth.signOut()}
+            onClick={() => {
+              localStorage.removeItem(AUTH_STORAGE_KEY);
+              window.location.href = "/login";
+            }}
             className="mt-8 text-sm text-zinc-400 underline"
           >
             Sign out

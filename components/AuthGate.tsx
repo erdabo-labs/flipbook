@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { BottomNav } from "@/components/BottomNav";
+import { AUTH_STORAGE_KEY } from "@/app/login/page";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -12,15 +12,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setAuthenticated(!!data.session);
-      setChecked(true);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthenticated(!!session);
-    });
-    return () => listener.subscription.unsubscribe();
-  }, []);
+    setAuthenticated(localStorage.getItem(AUTH_STORAGE_KEY) === "1");
+    setChecked(true);
+  }, [pathname]);
 
   useEffect(() => {
     if (!checked) return;
