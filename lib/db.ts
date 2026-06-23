@@ -347,3 +347,11 @@ export async function createTradeTransaction(input: {
 export async function markItemKept(itemId: number, notes?: string | null): Promise<void> {
   await updateItemStatus(itemId, "kept", notes ?? undefined);
 }
+
+export async function updateItemDetails(
+  itemId: number,
+  input: { name: string; cost_basis: number; category: string | null; condition: ItemCondition | null }
+): Promise<void> {
+  const { error } = await supabase.from("item").update(input).eq("id", itemId);
+  if (error) throw error;
+}

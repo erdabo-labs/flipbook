@@ -45,6 +45,27 @@ CREATE TABLE transaction_item (
 );
 
 CREATE VIEW acquisition_pnl AS
+WITH cash AS (
+    SELECT DISTINCT a.id AS acquisition_id, t.id AS transaction_id, t.cash_amount
+    FROM acquisition a
+    JOIN item i ON i.acquisition_id = a.id
+    JOIN transaction_item ti ON ti.item_id = i.id AND ti.direction = 'outbound'
+    JOIN transaction t ON t.id = ti.transaction_id
+),
+cash_agg AS (
+    SELECT acquisition_id, COALESCE(SUM(cash_amount), 0) AS cash_received
+    FROM cash
+    GROUP BY acquisition_id
+),
+item_agg AS (
+    SELECT
+        acquisition_id,
+        COUNT(*) AS total_items,
+        COUNT(*) FILTER (WHERE status = 'inventory') AS items_in_inventory,
+        COUNT(*) FILTER (WHERE status = 'kept') AS items_kept
+    FROM item
+    GROUP BY acquisition_id
+)
 SELECT
     a.id,
     a.description,
@@ -52,16 +73,14 @@ SELECT
     a.source_type,
     a.deal_group,
     a.total_cost,
-    COALESCE(SUM(CASE WHEN ti.direction = 'outbound' THEN t.cash_amount ELSE 0 END), 0) AS cash_received,
-    COALESCE(SUM(CASE WHEN ti.direction = 'outbound' THEN t.cash_amount ELSE 0 END), 0) - a.total_cost AS realized_pnl,
-    COUNT(CASE WHEN i.status = 'inventory' THEN 1 END) AS items_in_inventory,
-    COUNT(CASE WHEN i.status = 'kept'      THEN 1 END) AS items_kept,
-    COUNT(i.id) AS total_items
+    COALESCE(c.cash_received, 0) AS cash_received,
+    COALESCE(c.cash_received, 0) - a.total_cost AS realized_pnl,
+    COALESCE(ia.items_in_inventory, 0) AS items_in_inventory,
+    COALESCE(ia.items_kept, 0) AS items_kept,
+    COALESCE(ia.total_items, 0) AS total_items
 FROM acquisition a
-LEFT JOIN item i ON i.acquisition_id = a.id
-LEFT JOIN transaction_item ti ON ti.item_id = i.id
-LEFT JOIN transaction t ON t.id = ti.transaction_id
-GROUP BY a.id;
+LEFT JOIN cash_agg c ON c.acquisition_id = a.id
+LEFT JOIN item_agg ia ON ia.acquisition_id = a.id;
 
 CREATE VIEW current_inventory AS
 SELECT
@@ -76,14 +95,18 @@ JOIN acquisition a ON a.id = i.acquisition_id
 WHERE i.status IN ('inventory','listed');
 
 CREATE VIEW summary_stats AS
+WITH cash AS (
+    SELECT DISTINCT a.id AS acquisition_id, t.id AS transaction_id, t.cash_amount
+    FROM acquisition a
+    JOIN item i ON i.acquisition_id = a.id
+    JOIN transaction_item ti ON ti.item_id = i.id AND ti.direction = 'outbound'
+    JOIN transaction t ON t.id = ti.transaction_id
+)
 SELECT
-    COUNT(DISTINCT a.id) AS total_acquisitions,
-    COALESCE(SUM(a.total_cost), 0) AS total_invested,
-    COALESCE(SUM(CASE WHEN ti.direction = 'outbound' THEN t.cash_amount ELSE 0 END), 0) AS total_cash_received,
-    COALESCE(SUM(CASE WHEN ti.direction = 'outbound' THEN t.cash_amount ELSE 0 END), 0) - COALESCE(SUM(a.total_cost), 0) AS total_pnl,
-    COUNT(CASE WHEN i.status IN ('inventory','listed') THEN 1 END) AS items_in_inventory,
-    COALESCE(SUM(CASE WHEN i.status IN ('inventory','listed') THEN i.cost_basis ELSE 0 END), 0) AS capital_tied_up
-FROM acquisition a
-LEFT JOIN item i ON i.acquisition_id = a.id
-LEFT JOIN transaction_item ti ON ti.item_id = i.id
-LEFT JOIN transaction t ON t.id = ti.transaction_id;
+    (SELECT COUNT(*) FROM acquisition) AS total_acquisitions,
+    (SELECT COALESCE(SUM(total_cost), 0) FROM acquisition) AS total_invested,
+    COALESCE((SELECT SUM(cash_amount) FROM cash), 0) AS total_cash_received,
+    COALESCE((SELECT SUM(cash_amount) FROM cash), 0) - (SELECT COALESCE(SUM(total_cost), 0) FROM acquisition) AS total_pnl,
+    (SELECT COUNT(*) FROM item WHERE status IN ('inventory','listed')) AS items_in_inventory,
+    (SELECT COALESCE(SUM(cost_basis), 0) FROM item WHERE status IN ('inventory','listed')) AS capital_tied_up
+FROM (SELECT 1) AS dummy;
