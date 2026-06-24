@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getInventory } from "@/lib/db";
 import type { CurrentInventoryRow } from "@/lib/types";
-import { formatCurrency, formatDate, daysSince } from "@/lib/format";
+import { formatCurrency, formatDate, daysSince, saleHref } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/Badge";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { LinkButton } from "@/components/ui/Button";
@@ -30,6 +30,26 @@ export default function InventoryPage() {
       ),
     [rows]
   );
+
+  const bundleMembers = useMemo(() => {
+    const map = new Map<string, CurrentInventoryRow[]>();
+    for (const row of rows) {
+      if (!row.bundle_id) continue;
+      if (!map.has(row.bundle_id)) map.set(row.bundle_id, []);
+      map.get(row.bundle_id)!.push(row);
+    }
+    return map;
+  }, [rows]);
+
+  function saleLinkFor(item: CurrentInventoryRow): string {
+    const members = item.bundle_id ? bundleMembers.get(item.bundle_id) ?? [item] : [item];
+    const total = members.reduce((sum, m) => sum + (m.pending_price ?? m.listed_price ?? 0), 0);
+    return saleHref({
+      acquisitionId: item.acquisition_id,
+      itemIds: members.map((m) => m.id),
+      cashAmount: total || null,
+    });
+  }
 
   const grouped = useMemo(() => {
     const map = new Map<number, { acquisition_id: number; desc: string; date: string; items: CurrentInventoryRow[] }>();
@@ -97,6 +117,9 @@ export default function InventoryPage() {
                                   +{formatCurrency(item.pending_price)} pending sale
                                 </span>
                               )}
+                              {item.bundle_label && (
+                                <span className="ml-2 text-teal-600">&middot; {item.bundle_label}</span>
+                              )}
                             </p>
                             <p className="mt-1 text-xs text-zinc-400">
                               Held {daysSince(item.acquired_date)} days &middot; acquired {formatDate(item.acquired_date)}
@@ -104,13 +127,7 @@ export default function InventoryPage() {
                           </div>
                           <StatusBadge status={item.status} />
                         </div>
-                        <LinkButton
-                          href={`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${item.id}${
-                            item.pending_price != null ? `&cash=${item.pending_price}` : ""
-                          }`}
-                          variant="secondary"
-                          className="mt-3 w-full"
-                        >
+                        <LinkButton href={saleLinkFor(item)} variant="secondary" className="mt-3 w-full">
                           {item.status === "pending" ? "Complete sale" : "Record sale"}
                         </LinkButton>
                       </div>

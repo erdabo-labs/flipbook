@@ -20,12 +20,12 @@ const today = new Date().toISOString().slice(0, 10);
 
 export function TransactionForm({
   initialAcquisitionId,
-  initialItemId,
+  initialItemIds,
   initialKind,
   initialCashAmount,
 }: {
   initialAcquisitionId: number | null;
-  initialItemId: number | null;
+  initialItemIds: number[];
   initialKind: Kind;
   initialCashAmount?: string;
 }) {
@@ -34,7 +34,7 @@ export function TransactionForm({
   const [acquisitionId, setAcquisitionId] = useState<number | null>(initialAcquisitionId);
   const [items, setItems] = useState<Item[]>([]);
   const [kind, setKind] = useState<Kind>(initialKind);
-  const [selectedIds, setSelectedIds] = useState<number[]>(initialItemId ? [initialItemId] : []);
+  const [selectedIds, setSelectedIds] = useState<number[]>(initialItemIds);
   const [cashAmount, setCashAmount] = useState(initialCashAmount ?? "");
   const [receivedItemName, setReceivedItemName] = useState("");
   const [date, setDate] = useState(today);

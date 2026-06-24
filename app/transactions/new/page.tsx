@@ -7,7 +7,13 @@ import { TransactionForm } from "@/components/TransactionForm";
 function NewTransactionContent() {
   const searchParams = useSearchParams();
   const acquisitionId = searchParams.get("acquisition_id");
-  const itemId = searchParams.get("item_id");
+  const itemIdsParam = searchParams.get("item_ids") ?? searchParams.get("item_id");
+  const itemIds = itemIdsParam
+    ? itemIdsParam
+        .split(",")
+        .map(Number)
+        .filter((n) => !Number.isNaN(n))
+    : [];
   const type = searchParams.get("type");
   const cash = searchParams.get("cash");
 
@@ -16,8 +22,8 @@ function NewTransactionContent() {
       <h1 className="mb-6 text-2xl font-bold">Record transaction</h1>
       <TransactionForm
         initialAcquisitionId={acquisitionId ? Number(acquisitionId) : null}
-        initialItemId={itemId ? Number(itemId) : null}
-        initialKind={type === "trade" ? "trade" : "sale"}
+        initialItemIds={itemIds}
+        initialKind={type === "trade" ? "trade" : itemIds.length > 1 ? "bundle" : "sale"}
         initialCashAmount={cash ?? undefined}
       />
     </div>

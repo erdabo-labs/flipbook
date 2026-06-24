@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { splitAmount } from "./format";
 import type {
   Acquisition,
   AcquisitionPnl,
@@ -240,6 +241,64 @@ export async function markItemListed(itemId: number, listed_price: number | null
 
 export async function markItemPending(itemId: number, pending_price: number | null): Promise<void> {
   const { error } = await supabase.from("item").update({ status: "pending", pending_price }).eq("id", itemId);
+  if (error) throw error;
+}
+
+export async function createBundleListing(input: {
+  items: { id: number; cost_basis: number }[];
+  label: string | null;
+  total_listed_price: number | null;
+}): Promise<string> {
+  const bundleId = crypto.randomUUID();
+  const shares =
+    input.total_listed_price != null
+      ? splitAmount(input.total_listed_price, input.items.map((i) => i.cost_basis))
+      : input.items.map(() => null);
+
+  for (let i = 0; i < input.items.length; i++) {
+    const { error } = await supabase
+      .from("item")
+      .update({
+        bundle_id: bundleId,
+        bundle_label: input.label,
+        status: "listed",
+        listed_price: shares[i],
+      })
+      .eq("id", input.items[i].id);
+    if (error) throw error;
+  }
+  return bundleId;
+}
+
+export async function getBundleMembers(bundleId: string): Promise<Item[]> {
+  const { data, error } = await supabase.from("item").select("*").eq("bundle_id", bundleId);
+  if (error) throw error;
+  return data as Item[];
+}
+
+export async function setBundlePending(bundleId: string, total_pending_price: number | null): Promise<void> {
+  const members = await getBundleMembers(bundleId);
+  const shares =
+    total_pending_price != null
+      ? splitAmount(total_pending_price, members.map((m) => m.cost_basis))
+      : members.map(() => null);
+
+  for (let i = 0; i < members.length; i++) {
+    const { error } = await supabase
+      .from("item")
+      .update({ status: "pending", pending_price: shares[i] })
+      .eq("id", members[i].id);
+    if (error) throw error;
+  }
+}
+
+export async function undoBundlePending(bundleId: string): Promise<void> {
+  const { error } = await supabase.from("item").update({ status: "listed" }).eq("bundle_id", bundleId);
+  if (error) throw error;
+}
+
+export async function removeFromBundle(itemId: number): Promise<void> {
+  const { error } = await supabase.from("item").update({ bundle_id: null, bundle_label: null }).eq("id", itemId);
   if (error) throw error;
 }
 

@@ -39,6 +39,8 @@ export interface Item {
   notes: string | null;
   listed_price: number | null;
   pending_price: number | null;
+  bundle_id: string | null;
+  bundle_label: string | null;
   created_at: string;
 }
 
@@ -87,6 +89,8 @@ export interface CurrentInventoryRow {
   status: ItemStatus;
   listed_price: number | null;
   pending_price: number | null;
+  bundle_id: string | null;
+  bundle_label: string | null;
   acquisition_id: number;
   acquisition_desc: string;
   acquired_date: string;
