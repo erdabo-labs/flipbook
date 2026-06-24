@@ -139,11 +139,17 @@ export default function NewAcquisitionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="mb-1 text-2xl font-bold">Log new deal</h1>
-      <p className="mb-6 text-sm text-zinc-500">Step {step} of 2 — {step === 1 ? "Deal info" : "Items"}</p>
+    <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
+      <div className="mb-6 flex items-center justify-between">
+        <button type="button" onClick={() => router.back()} className="text-sm font-medium text-[#8C887D]">
+          Cancel
+        </button>
+        <h1 className="text-[14px] font-bold">Log a deal</h1>
+        <span className="w-12" />
+      </div>
+      <p className="mb-6 text-sm text-[#8C887D]">Step {step} of 2 — {step === 1 ? "Deal info" : "Items"}</p>
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-sm text-[#DC2626]">{error}</p>}
 
       {step === 1 && (
         <form onSubmit={handleDealSubmit} className="flex flex-col gap-4">
@@ -214,7 +220,7 @@ export default function NewAcquisitionPage() {
 
       {step === 2 && (
         <div className="flex flex-col gap-4">
-          <div className="rounded-lg bg-zinc-100 px-4 py-3 text-sm">
+          <div className="rounded-lg bg-[#F4F2EC] px-4 py-3 text-sm">
             <div className="flex justify-between">
               <span>Item 1 cost (auto)</span>
               <span className="font-medium">{formatCurrency(firstItemCost)}</span>
@@ -231,13 +237,13 @@ export default function NewAcquisitionPage() {
           </div>
 
           {items.map((item, idx) => (
-            <div key={idx} className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4">
+            <div key={idx} className="flex flex-col gap-3 rounded-[14px] border border-[#ECEAE3] bg-white p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-zinc-500">Item {idx + 1}</span>
+                <span className="text-sm font-semibold text-[#8C887D]">Item {idx + 1}</span>
                 {!singleItem && idx > 0 && (
                   <button
                     onClick={() => removeItem(idx)}
-                    className="text-sm text-red-600"
+                    className="text-sm text-[#DC2626]"
                     type="button"
                   >
                     Remove
@@ -264,8 +270,8 @@ export default function NewAcquisitionPage() {
               </Select>
               {idx === 0 ? (
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium text-zinc-700">Cost basis (auto)</span>
-                  <div className="min-h-11 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-base text-zinc-700">
+                  <span className="text-sm font-medium text-[#1A1A17]">Cost basis (auto)</span>
+                  <div className="min-h-11 w-full rounded-lg border border-[#ECEAE3] bg-[#FAF9F6] px-3 py-2 text-base text-[#1A1A17]">
                     {formatCurrency(firstItemCost)}
                   </div>
                 </div>
@@ -306,13 +312,17 @@ export default function NewAcquisitionPage() {
           ))}
 
           {!singleItem && (
-            <Button variant="secondary" type="button" onClick={addItem}>
-              + Add another item
-            </Button>
+            <button
+              type="button"
+              onClick={addItem}
+              className="flex min-h-11 items-center justify-center rounded-[12px] border border-dashed border-[#E3E0D7] px-4 text-sm font-semibold text-[#047857]"
+            >
+              + Add item
+            </button>
           )}
 
-          <Button type="button" onClick={handleItemsSubmit} disabled={saving} className="mt-2">
-            {saving ? "Saving..." : "Done"}
+          <Button type="button" onClick={handleItemsSubmit} disabled={saving} className="mt-2 w-full">
+            {saving ? "Saving..." : "Save deal"}
           </Button>
         </div>
       )}

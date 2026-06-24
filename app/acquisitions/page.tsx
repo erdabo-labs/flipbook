@@ -31,8 +31,8 @@ export default function AcquisitionsListPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Deals</h1>
-        <LinkButton href="/acquisitions/new">+ New</LinkButton>
+        <h1 className="text-[26px] font-extrabold tracking-[-0.03em]">Deals</h1>
+        <LinkButton href="/acquisitions/new">+ Log deal</LinkButton>
       </div>
 
       <div className="mb-4 flex gap-2">
@@ -41,7 +41,9 @@ export default function AcquisitionsListPage() {
             key={f}
             onClick={() => setFilter(f)}
             className={`min-h-9 rounded-full px-4 text-sm font-medium capitalize ${
-              filter === f ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"
+              filter === f
+                ? "bg-[#1A1A17] text-white"
+                : "border border-[#ECEAE3] bg-white text-[#8C887D]"
             }`}
           >
             {f}
@@ -50,7 +52,7 @@ export default function AcquisitionsListPage() {
       </div>
 
       {loading && <LoadingState />}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-[#DC2626]">{error}</p>}
 
       {!loading && !error && (
         filtered.length === 0 ? (

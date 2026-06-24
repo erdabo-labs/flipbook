@@ -1,10 +1,11 @@
 import type { ItemStatus } from "@/lib/types";
 
 const STATUS_STYLES: Record<ItemStatus, string> = {
-  inventory: "bg-zinc-100 text-zinc-700",
-  listed: "bg-blue-100 text-blue-700",
-  pending: "bg-orange-100 text-orange-700",
-  sold: "bg-green-100 text-green-700",
+  inventory: "bg-[#F4F2EC] text-[#8C887D]",
+  listed:
+    "bg-[#FFFBEB] text-[#B45309] border border-dashed border-[#ECD9A8] font-semibold",
+  pending: "bg-[#1D4ED8] text-white font-bold",
+  sold: "bg-[#ECFDF5] text-[#047857]",
   traded: "bg-purple-100 text-purple-700",
   kept: "bg-amber-100 text-amber-700",
   bundled: "bg-teal-100 text-teal-700",
@@ -23,7 +24,7 @@ const STATUS_LABELS: Record<ItemStatus, string> = {
 export function StatusBadge({ status }: { status: ItemStatus }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[status]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] uppercase tracking-wide ${STATUS_STYLES[status]}`}
     >
       {STATUS_LABELS[status]}
     </span>
@@ -39,7 +40,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 ${className}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-[#F4F2EC] text-[#8C887D] ${className}`}
     >
       {children}
     </span>

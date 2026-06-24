@@ -11,9 +11,9 @@ export function formatPnl(amount: number): string {
 }
 
 export function pnlColorClass(amount: number): string {
-  if (amount > 0) return "text-green-600";
-  if (amount < 0) return "text-red-600";
-  return "text-zinc-500";
+  if (amount > 0) return "text-[#047857]";
+  if (amount < 0) return "text-[#DC2626]";
+  return "text-[#8C887D]";
 }
 
 export function formatDate(dateStr: string): string {

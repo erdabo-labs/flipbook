@@ -2,10 +2,10 @@ import { ButtonHTMLAttributes, ReactNode } from "react";
 import Link from "next/link";
 
 const VARIANTS = {
-  primary: "bg-zinc-900 text-white active:bg-zinc-700",
-  secondary: "bg-zinc-100 text-zinc-900 active:bg-zinc-200",
+  primary: "bg-[#047857] text-white active:bg-[#03664A]",
+  secondary: "bg-[#F4F2EC] text-[#1A1A17] active:bg-[#ECE9E1]",
   danger: "bg-red-600 text-white active:bg-red-700",
-  ghost: "bg-transparent text-zinc-900 active:bg-zinc-100",
+  ghost: "bg-transparent text-[#1A1A17] active:bg-[#F4F2EC]",
 };
 
 type Variant = keyof typeof VARIANTS;
@@ -23,7 +23,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
+      className={`flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
       {...props}
     >
       {children}
@@ -45,7 +45,7 @@ export function LinkButton({
   return (
     <Link
       href={href}
-      className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${VARIANTS[variant]} ${className}`}
+      className={`flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-4 py-2.5 text-sm font-semibold transition-colors ${VARIANTS[variant]} ${className}`}
     >
       {children}
     </Link>

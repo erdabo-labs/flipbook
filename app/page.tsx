@@ -37,21 +37,32 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Flipbook</h1>
-        <div className="flex gap-2">
-          <LinkButton href="/acquisitions/new">+ Log deal</LinkButton>
+        <div className="flex items-center gap-2">
+          <svg className="h-6 w-6" viewBox="0 0 40 40" fill="none" stroke="#047857" strokeWidth={3} strokeLinejoin="round">
+            <path d="M2 4c6-2.4 12-2.4 18 0v32c-6-2.4-12-2.4-18 0z" />
+            <path d="M38 4c-6-2.4-12-2.4-18 0v32c6-2.4 12-2.4 18 0z" />
+          </svg>
+          <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">Flipbook</h1>
+        </div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ECFDF5] text-sm font-bold text-[#047857]">
+          F
         </div>
       </div>
 
       {loading && <LoadingState />}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-[#DC2626]">{error}</p>}
 
       {!loading && !error && stats && (
         <>
           <SummaryStats stats={stats} />
 
           <section className="mt-8">
-            <h2 className="mb-3 text-lg font-semibold">Active deals</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-[14px] font-bold">Active deals</h2>
+              <LinkButton href="/acquisitions" variant="ghost" className="!min-h-0 !p-0 text-sm font-semibold text-[#047857]">
+                See all
+              </LinkButton>
+            </div>
             {active.length === 0 ? (
               <EmptyState
                 title="No active deals"
@@ -68,25 +79,25 @@ export default function DashboardPage() {
           </section>
 
           <section className="mt-8">
-            <h2 className="mb-3 text-lg font-semibold">Recent activity</h2>
+            <h2 className="mb-3 text-[14px] font-bold">Recent activity</h2>
             {recent.length === 0 ? (
               <EmptyState title="No transactions yet" description="Sales and trades will show up here." />
             ) : (
-              <div className="flex flex-col gap-2">
-                {recent.map((t) => (
+              <div className="rounded-[14px] border border-[#ECEAE3] bg-white">
+                {recent.map((t, i) => (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-3"
+                    className={`flex items-center justify-between p-3 ${i > 0 ? "border-t border-[#F1EFE9]" : ""}`}
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
+                      <p className="truncate text-[14px] font-medium text-[#1A1A17]">
                         {t.items.map((i) => i.item_name).join(", ") || "—"}
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-[12px] text-[#8C887D]">
                         {formatDate(t.transaction_date)} &middot; {t.type}
                       </p>
                     </div>
-                    <span className={`text-sm font-semibold ${pnlColorClass(t.cash_amount)}`}>
+                    <span className={`font-mono text-sm font-semibold ${pnlColorClass(t.cash_amount)}`}>
                       {formatPnl(t.cash_amount)}
                     </span>
                   </div>
@@ -101,7 +112,7 @@ export default function DashboardPage() {
               localStorage.removeItem(AUTH_STORAGE_KEY);
               window.location.href = "/login";
             }}
-            className="mt-8 text-sm text-zinc-400 underline"
+            className="mt-8 text-sm text-[#B3AFA5] underline"
           >
             Sign out
           </button>
