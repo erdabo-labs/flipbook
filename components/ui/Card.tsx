@@ -12,8 +12,8 @@ export function Card({
   return (
     <div
       onClick={onClick}
-      className={`rounded-xl border border-zinc-200 bg-white p-4 shadow-sm ${
-        onClick ? "active:bg-zinc-50 cursor-pointer" : ""
+      className={`rounded-[14px] border border-[#ECEAE3] bg-white p-4 transition-colors ${
+        onClick ? "active:bg-[#FCFBF8] cursor-pointer" : ""
       } ${className}`}
     >
       {children}

@@ -306,20 +306,20 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 text-left active:bg-zinc-50"
+        className="flex w-full items-center justify-between gap-3 rounded-[14px] border border-[#ECEAE3] bg-white p-3 text-left active:bg-[#FCFBF8]"
       >
         <div className="min-w-0">
-          <p className="truncate font-medium">{item.name}</p>
-          <p className="text-sm text-zinc-500">
-            {formatCurrency(item.cost_basis)}
+          <p className="truncate text-[14px] font-semibold text-[#1A1A17]">{item.name}</p>
+          <p className="text-[12px] text-[#8C887D]">
+            {item.category ?? "Uncategorized"} &middot; cost {formatCurrency(item.cost_basis)}
             {item.condition && <> &middot; {CONDITION_LABELS[item.condition]}</>}
             {item.status === "listed" && item.listed_price != null && (
-              <span className="ml-2 font-medium text-blue-600">
+              <span className="ml-2 font-mono font-semibold text-[#B45309]">
                 +{formatCurrency(item.listed_price)} asking
               </span>
             )}
             {item.status === "pending" && item.pending_price != null && (
-              <span className="ml-2 font-medium text-orange-600">
+              <span className="ml-2 font-mono font-semibold text-[#1D4ED8]">
                 +{formatCurrency(item.pending_price)} pending sale
               </span>
             )}
@@ -331,7 +331,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end bg-black/40"
+          className="fixed inset-0 z-50 flex items-end bg-[rgba(26,26,23,.32)]"
           onClick={() => {
             setOpen(false);
             setEditing(false);
@@ -342,7 +342,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
           }}
         >
           <div
-            className="w-full rounded-t-2xl bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            className="w-full rounded-t-[26px] bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
             onClick={(e) => e.stopPropagation()}
           >
             {editing ? (
@@ -390,7 +390,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
             ) : splitting ? (
               <div className="flex flex-col gap-3">
                 <p className="px-2 font-medium">Split item</p>
-                <p className="px-2 text-sm text-zinc-500">
+                <p className="px-2 text-sm text-[#8C887D]">
                   Replaces &quot;{item.name}&quot; with two items. Adjust names and cost basis as needed.
                 </p>
                 {error && <p className="px-2 text-sm text-red-600">{error}</p>}
@@ -436,7 +436,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
             ) : listing ? (
               <div className="flex flex-col gap-3">
                 <p className="px-2 font-medium">List item</p>
-                <p className="px-2 text-sm text-zinc-500">
+                <p className="px-2 text-sm text-[#8C887D]">
                   Optional asking price, shown until a buyer agrees to terms.
                 </p>
                 {error && <p className="px-2 text-sm text-red-600">{error}</p>}
@@ -461,7 +461,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
             ) : markingPending ? (
               <div className="flex flex-col gap-3">
                 <p className="px-2 font-medium">Mark pending sale</p>
-                <p className="px-2 text-sm text-zinc-500">
+                <p className="px-2 text-sm text-[#8C887D]">
                   A buyer agreed to terms. Enter the agreed price — it can differ from the asking price.
                   {pendingBundle && " This applies to the whole bundle."}
                 </p>
@@ -487,7 +487,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
             ) : bundling ? (
               <div className="flex flex-col gap-3">
                 <p className="px-2 font-medium">List as bundle</p>
-                <p className="px-2 text-sm text-zinc-500">
+                <p className="px-2 text-sm text-[#8C887D]">
                   Pick other inventory items from this deal to list together with &quot;{item.name}&quot; for one
                   combined price. The price is split across items by cost basis.
                 </p>
@@ -503,7 +503,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                   placeholder="0.00"
                 />
                 {bundleCandidates.length === 0 ? (
-                  <p className="px-2 text-sm text-zinc-500">No other available items in this deal.</p>
+                  <p className="px-2 text-sm text-[#8C887D]">No other available items in this deal.</p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {bundleCandidates.map((c) => (
@@ -527,7 +527,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
               </div>
             ) : (
               <>
-                <p className="mb-3 px-2 font-medium">{item.name}</p>
+                <p className="mb-3 px-2 font-semibold">{item.name}</p>
                 <div className="flex flex-col gap-1">
                   <SheetAction label="Edit details" onClick={startEdit} />
                   {isActionable && (
@@ -570,7 +570,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                     <SheetAction label="Move back to inventory" onClick={handleUndoKept} disabled={working} />
                   )}
                   {(item.status === "sold" || item.status === "traded" || item.status === "bundled") && (
-                    <p className="px-3 py-2 text-sm text-zinc-400">
+                    <p className="px-3 py-2 text-sm text-[#B3AFA5]">
                       To undo this, edit or delete the related transaction.
                     </p>
                   )}
@@ -601,8 +601,8 @@ function SheetAction({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`min-h-12 rounded-lg px-3 text-left text-base ${
-        muted ? "text-zinc-400" : "text-zinc-900 active:bg-zinc-100"
+      className={`min-h-12 rounded-[12px] px-3 text-left text-base ${
+        muted ? "text-[#B3AFA5]" : "text-[#1A1A17] active:bg-[#F4F2EC]"
       }`}
     >
       {label}

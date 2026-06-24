@@ -1,6 +1,15 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-hanken-grotesk);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+body {
+  font-family: var(--font-hanken-grotesk), sans-serif;
+}
+
+.font-mono,
+.tnum {
+  font-variant-numeric: tabular-nums;
 }

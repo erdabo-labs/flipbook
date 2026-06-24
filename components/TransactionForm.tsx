@@ -146,7 +146,7 @@ export function TransactionForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-[#DC2626]">{error}</p>}
 
       <div className="flex gap-2">
         {(
@@ -162,7 +162,7 @@ export function TransactionForm({
             type="button"
             onClick={() => handleKindChange(opt.value)}
             className={`min-h-9 flex-1 rounded-full px-2 text-xs font-medium ${
-              kind === opt.value ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"
+              kind === opt.value ? "bg-[#1A1A17] text-white" : "bg-[#F4F2EC] text-[#8C887D]"
             }`}
           >
             {opt.label}
@@ -187,13 +187,13 @@ export function TransactionForm({
       </Select>
 
       <div>
-        <p className="mb-1.5 text-sm font-medium text-zinc-700">
+        <p className="mb-1.5 text-sm font-medium text-[#1A1A17]">
           {kind === "bundle" ? "Select items (multiple)" : "Select item"}
         </p>
         {loading ? (
-          <p className="text-sm text-zinc-500">Loading items...</p>
+          <p className="text-sm text-[#8C887D]">Loading items...</p>
         ) : items.length === 0 ? (
-          <p className="text-sm text-zinc-500">No items available in inventory.</p>
+          <p className="text-sm text-[#8C887D]">No items available in inventory.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {items.map((item) => {
@@ -203,19 +203,19 @@ export function TransactionForm({
                   key={item.id}
                   type="button"
                   onClick={() => toggleItem(item.id)}
-                  className={`flex min-h-12 items-center justify-between rounded-lg border px-3 py-2 text-left ${
-                    selected ? "border-zinc-900 bg-zinc-50" : "border-zinc-300"
+                  className={`flex min-h-12 items-center justify-between rounded-[12px] border px-3 py-2 text-left ${
+                    selected ? "border-[#047857] bg-[#ECFDF5]" : "border-[#E3E0D7]"
                   }`}
                 >
                   <span className="text-sm font-medium">{item.name}</span>
-                  <span className="text-sm text-zinc-500">{formatCurrency(item.cost_basis)}</span>
+                  <span className="text-sm text-[#8C887D]">{formatCurrency(item.cost_basis)}</span>
                 </button>
               );
             })}
           </div>
         )}
         {selectedIds.length > 0 && (kind === "sale" || kind === "bundle") && (
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-[#8C887D]">
             Cost basis of selected items: {formatCurrency(total)}
           </p>
         )}
@@ -230,6 +230,7 @@ export function TransactionForm({
           value={cashAmount}
           onChange={(e) => setCashAmount(e.target.value)}
           placeholder="0.00"
+          className="font-mono"
         />
       )}
 
@@ -273,8 +274,12 @@ export function TransactionForm({
 
       <Textarea label="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
 
-      <Button type="submit" disabled={saving} className="mt-2">
-        {saving ? "Saving..." : "Save"}
+      <Button type="submit" disabled={saving} className="mt-2 w-full">
+        {saving
+          ? "Saving..."
+          : kind === "sale" || kind === "bundle"
+            ? `Record sale${cashAmount ? ` · +${formatCurrency(parseFloat(cashAmount) || 0)}` : ""}`
+            : "Save"}
       </Button>
     </form>
   );

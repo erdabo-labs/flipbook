@@ -28,10 +28,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (!checked) return null;
   if (!authenticated && pathname !== "/login") return null;
 
+  const isFullScreenForm = pathname.startsWith("/transactions/new") || pathname.startsWith("/acquisitions/new");
+
   return (
     <>
-      <main className="flex-1 pb-20 md:pb-6">{children}</main>
-      {authenticated && <BottomNav />}
+      <main className={`flex-1 ${isFullScreenForm ? "" : "pb-20 md:pb-6"}`}>{children}</main>
+      {authenticated && !isFullScreenForm && <BottomNav />}
     </>
   );
 }

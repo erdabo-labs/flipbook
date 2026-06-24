@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import {
   deleteTransaction,
   getAcquisition,
@@ -171,8 +172,8 @@ export default function AcquisitionDetailPage() {
   }
 
   if (loading) return <LoadingState />;
-  if (error) return <p className="p-6 text-sm text-red-600">{error}</p>;
-  if (!acquisition || !pnl) return <p className="p-6 text-sm text-zinc-500">Deal not found.</p>;
+  if (error) return <p className="p-6 text-sm text-[#DC2626]">{error}</p>;
+  if (!acquisition || !pnl) return <p className="p-6 text-sm text-[#8C887D]">Deal not found.</p>;
 
   const allocated = items.reduce((sum, i) => sum + i.cost_basis, 0);
   const allocationMismatch = Math.abs(allocated - acquisition.total_cost) > 0.01;
@@ -180,10 +181,13 @@ export default function AcquisitionDetailPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
+      <Link href="/acquisitions" className="mb-3 inline-block text-sm font-medium text-[#8C887D]">
+        ‹ Deals
+      </Link>
       {editing ? (
-        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4">
+        <div className="mb-4 flex flex-col gap-3 rounded-[14px] border border-[#ECEAE3] bg-white p-4">
           <p className="font-medium">Edit deal</p>
-          {editError && <p className="text-sm text-red-600">{editError}</p>}
+          {editError && <p className="text-sm text-[#DC2626]">{editError}</p>}
           <Input
             label="Description"
             value={form.description}
@@ -244,59 +248,65 @@ export default function AcquisitionDetailPage() {
       ) : (
         <div className="mb-4">
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-2xl font-bold">{acquisition.description}</h1>
-            <button type="button" onClick={startEdit} className="mt-1 shrink-0 text-sm text-zinc-500 underline">
+            <h1 className="text-[26px] font-extrabold tracking-[-0.03em]">{acquisition.description}</h1>
+            <button type="button" onClick={startEdit} className="mt-1 shrink-0 text-sm text-[#8C887D] underline">
               Edit
             </button>
           </div>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-[#8C887D]">
             {formatDate(acquisition.acquired_date)}
             {acquisition.source && <> &middot; {acquisition.source}</>}
           </p>
           {acquisition.deal_group && (
             <Badge className="mt-2">{acquisition.deal_group}</Badge>
           )}
-          {acquisition.notes && <p className="mt-2 text-sm text-zinc-600">{acquisition.notes}</p>}
+          {acquisition.notes && <p className="mt-2 text-sm text-[#8C887D]">{acquisition.notes}</p>}
         </div>
       )}
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-4">
+      <div className="rounded-[14px] border border-[#ECEAE3] bg-white p-4">
         <div className="flex justify-between text-sm">
-          <span className="text-zinc-500">Cost</span>
-          <span className="font-medium">{formatCurrency(acquisition.total_cost)}</span>
+          <span className="text-[#8C887D]">Cost</span>
+          <span className="font-mono font-medium">{formatCurrency(acquisition.total_cost)}</span>
         </div>
         <div className="mt-1 flex justify-between text-sm">
-          <span className="text-zinc-500">Cash received</span>
-          <span className="font-medium">{formatCurrency(pnl.cash_received)}</span>
+          <span className="text-[#8C887D]">Cash received</span>
+          <span className="font-mono font-medium">{formatCurrency(pnl.cash_received)}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between border-t border-zinc-100 pt-2">
+        <div className="mt-2 flex items-center justify-between border-t border-[#F1EFE9] pt-2">
           <span className="font-medium">Realized P&L</span>
-          <span className={`text-lg font-semibold ${pnlColorClass(pnl.realized_pnl)}`}>
+          <span className={`font-mono text-lg font-semibold ${pnlColorClass(pnl.realized_pnl)}`}>
             {formatPnl(pnl.realized_pnl)}
           </span>
         </div>
         {(pnl.listed_value > 0 || pnl.pending_value > 0) && (
-          <div className="mt-1 flex justify-between text-sm">
-            <span className="text-zinc-500">Potential cash</span>
-            <span className="font-medium text-orange-600">
-              {formatCurrency(pnl.listed_value + pnl.pending_value)}
-            </span>
+          <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[#F1EFE9] pt-3">
+            {pnl.listed_value > 0 && (
+              <span className="rounded-full border border-dashed border-[#ECD9A8] bg-[#FFFBEB] px-2.5 py-1 text-[10px] font-semibold text-[#B45309]">
+                Listed {formatCurrency(pnl.listed_value)} potential
+              </span>
+            )}
+            {pnl.pending_value > 0 && (
+              <span className="rounded-full bg-[#1D4ED8] px-2.5 py-1 text-[10px] font-bold text-white">
+                Pending {formatCurrency(pnl.pending_value)} firm
+              </span>
+            )}
           </div>
         )}
         {hasInventory && (
-          <p className="mt-2 text-xs text-amber-600">
+          <p className="mt-2 text-xs text-[#B45309]">
             {pnl.items_in_inventory} item{pnl.items_in_inventory === 1 ? "" : "s"} still in inventory
           </p>
         )}
         {allocationMismatch && (
-          <p className="mt-1 text-xs text-amber-600">
+          <p className="mt-1 text-xs text-[#B45309]">
             Allocated cost basis ({formatCurrency(allocated)}) doesn&apos;t match total cost.
           </p>
         )}
       </div>
 
       <section className="mt-6">
-        <h2 className="mb-3 text-lg font-semibold">Items</h2>
+        <h2 className="mb-3 text-[14px] font-bold">Items</h2>
         {items.length === 0 ? (
           <EmptyState title="No items yet" />
         ) : (
@@ -310,7 +320,7 @@ export default function AcquisitionDetailPage() {
 
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Transactions</h2>
+          <h2 className="text-[14px] font-bold">Transactions</h2>
           <LinkButton href={`/transactions/new?acquisition_id=${id}`} variant="secondary">
             + Record
           </LinkButton>
@@ -321,9 +331,9 @@ export default function AcquisitionDetailPage() {
           <div className="flex flex-col gap-2">
             {transactions.map((t) =>
               editingTxId === t.id ? (
-                <div key={t.id} className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4">
+                <div key={t.id} className="flex flex-col gap-3 rounded-[14px] border border-[#ECEAE3] bg-white p-4">
                   <p className="font-medium capitalize">{t.type.replace("_", " ")}</p>
-                  {txError && <p className="text-sm text-red-600">{txError}</p>}
+                  {txError && <p className="text-sm text-[#DC2626]">{txError}</p>}
                   <Input
                     label="Date"
                     type="date"
@@ -365,7 +375,7 @@ export default function AcquisitionDetailPage() {
                     type="button"
                     onClick={handleUndoTx}
                     disabled={txSaving}
-                    className="text-sm text-red-600 underline"
+                    className="text-sm text-[#DC2626] underline"
                   >
                     Undo this transaction (items return to inventory)
                   </button>
@@ -375,16 +385,16 @@ export default function AcquisitionDetailPage() {
                   key={t.id}
                   type="button"
                   onClick={() => startEditTx(t)}
-                  className="rounded-xl border border-zinc-200 bg-white p-3 text-left active:bg-zinc-50"
+                  className="rounded-[14px] border border-[#ECEAE3] bg-white p-3 text-left active:bg-[#FAF9F6]"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium capitalize">{t.type.replace("_", " ")}</span>
-                    <span className={`text-sm font-semibold ${pnlColorClass(t.cash_amount)}`}>
+                    <span className={`font-mono text-sm font-semibold ${pnlColorClass(t.cash_amount)}`}>
                       {formatPnl(t.cash_amount)}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">{formatDate(t.transaction_date)}</p>
-                  <p className="mt-1 text-sm text-zinc-700">
+                  <p className="mt-1 text-xs text-[#8C887D]">{formatDate(t.transaction_date)}</p>
+                  <p className="mt-1 text-sm text-[#1A1A17]">
                     {t.items.map((i) => `${i.direction === "outbound" ? "−" : "+"} ${i.item_name}`).join(", ")}
                   </p>
                 </button>

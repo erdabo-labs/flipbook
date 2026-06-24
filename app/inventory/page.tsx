@@ -69,21 +69,21 @@ export default function InventoryPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="mb-4 text-2xl font-bold">Inventory</h1>
+      <h1 className="mb-4 text-[26px] font-extrabold tracking-[-0.03em]">Inventory</h1>
 
       {loading && <LoadingState />}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-[#DC2626]">{error}</p>}
 
       {!loading && !error && (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-zinc-200 bg-white p-4">
-              <p className="text-xs font-medium text-zinc-500">Capital tied up</p>
-              <p className="mt-1 text-2xl font-semibold">{formatCurrency(totalCapital)}</p>
+            <div className="rounded-[14px] border border-[#ECEAE3] bg-white p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#A8A49A]">Capital tied up</p>
+              <p className="mt-1 font-mono text-[21px] font-semibold text-[#1A1A17]">{formatCurrency(totalCapital)}</p>
             </div>
-            <div className="rounded-xl border border-zinc-200 bg-white p-4">
-              <p className="text-xs font-medium text-zinc-500">Potential cash</p>
-              <p className="mt-1 text-2xl font-semibold">{formatCurrency(potentialCash)}</p>
+            <div className="rounded-[14px] border border-[#D9E3FB] bg-[#F7F9FF] p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#1D4ED8]">Potential cash</p>
+              <p className="mt-1 font-mono text-[21px] font-semibold text-[#1D4ED8]">{formatCurrency(potentialCash)}</p>
             </div>
           </div>
 
@@ -95,25 +95,25 @@ export default function InventoryPage() {
                 <section key={group.acquisition_id}>
                   <Link
                     href={`/acquisitions/${group.acquisition_id}`}
-                    className="mb-2 block text-sm font-semibold text-zinc-700"
+                    className="mb-2 block text-[14px] font-bold text-[#6B6A62]"
                   >
                     {group.desc}
                   </Link>
                   <div className="flex flex-col gap-2">
                     {group.items.map((item) => (
-                      <div key={item.id} className="rounded-xl border border-zinc-200 bg-white p-3">
+                      <div key={item.id} className="rounded-[14px] border border-[#ECEAE3] bg-white p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="truncate font-medium">{item.name}</p>
-                            <p className="text-sm text-zinc-500">
-                              {item.category ?? "Uncategorized"} &middot; {formatCurrency(item.cost_basis)}
+                            <p className="truncate text-[14px] font-semibold text-[#1A1A17]">{item.name}</p>
+                            <p className="text-[12px] text-[#8C887D]">
+                              {item.category ?? "Uncategorized"} &middot; cost {formatCurrency(item.cost_basis)}
                               {item.status === "listed" && item.listed_price != null && (
-                                <span className="ml-2 font-medium text-blue-600">
+                                <span className="ml-2 font-mono font-semibold text-[#B45309]">
                                   +{formatCurrency(item.listed_price)} asking
                                 </span>
                               )}
                               {item.status === "pending" && item.pending_price != null && (
-                                <span className="ml-2 font-medium text-orange-600">
+                                <span className="ml-2 font-mono font-semibold text-[#1D4ED8]">
                                   +{formatCurrency(item.pending_price)} pending sale
                                 </span>
                               )}
@@ -121,13 +121,17 @@ export default function InventoryPage() {
                                 <span className="ml-2 text-teal-600">&middot; {item.bundle_label}</span>
                               )}
                             </p>
-                            <p className="mt-1 text-xs text-zinc-400">
+                            <p className="mt-1 text-xs text-[#B3AFA5]">
                               Held {daysSince(item.acquired_date)} days &middot; acquired {formatDate(item.acquired_date)}
                             </p>
                           </div>
                           <StatusBadge status={item.status} />
                         </div>
-                        <LinkButton href={saleLinkFor(item)} variant="secondary" className="mt-3 w-full">
+                        <LinkButton
+                          href={saleLinkFor(item)}
+                          variant={item.status === "pending" ? "primary" : "secondary"}
+                          className={`mt-3 w-full ${item.status === "pending" ? "!bg-[#1D4ED8] active:!bg-[#1840B0]" : ""}`}
+                        >
                           {item.status === "pending" ? "Complete sale" : "Record sale"}
                         </LinkButton>
                       </div>
