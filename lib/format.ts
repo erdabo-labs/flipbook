@@ -32,3 +32,28 @@ export function daysSince(dateStr: string): number {
   const diff = now.getTime() - d.getTime();
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
+
+export function saleHref(params: {
+  acquisitionId: number;
+  itemIds: number[];
+  cashAmount?: number | null;
+}): string {
+  const cashParam = params.cashAmount != null ? `&cash=${params.cashAmount}` : "";
+  return `/transactions/new?acquisition_id=${params.acquisitionId}&item_ids=${params.itemIds.join(",")}${cashParam}`;
+}
+
+export function splitAmount(total: number, weights: number[]): number[] {
+  const sumWeights = weights.reduce((s, w) => s + w, 0);
+  const useEqual = sumWeights <= 0;
+  const n = weights.length;
+  const shares: number[] = [];
+  let allocated = 0;
+  for (let i = 0; i < n - 1; i++) {
+    const raw = useEqual ? total / n : (total * weights[i]) / sumWeights;
+    const rounded = Math.round(raw * 100) / 100;
+    shares.push(rounded);
+    allocated += rounded;
+  }
+  shares.push(Math.round((total - allocated) * 100) / 100);
+  return shares;
+}

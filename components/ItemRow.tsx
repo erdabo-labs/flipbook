@@ -5,9 +5,21 @@ import { useRouter } from "next/navigation";
 import type { Item, ItemCondition } from "@/lib/types";
 import { CATEGORIES, CONDITIONS } from "@/lib/types";
 import { StatusBadge } from "@/components/ui/Badge";
-import { formatCurrency } from "@/lib/format";
-import { markItemKept, markItemListed, markItemPending, splitItem, updateItemDetails, updateItemStatus } from "@/lib/db";
-import { Input, Select } from "@/components/ui/Input";
+import { formatCurrency, saleHref } from "@/lib/format";
+import {
+  createBundleListing,
+  getItemsForAcquisition,
+  markItemKept,
+  markItemListed,
+  markItemPending,
+  removeFromBundle,
+  setBundlePending,
+  splitItem,
+  undoBundlePending,
+  updateItemDetails,
+  updateItemStatus,
+} from "@/lib/db";
+import { Input, Select, Toggle } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 const CONDITION_LABELS: Record<string, string> = {
@@ -27,6 +39,12 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
   const [listedPrice, setListedPrice] = useState("");
   const [markingPending, setMarkingPending] = useState(false);
   const [pendingPrice, setPendingPrice] = useState("");
+  const [pendingBundle, setPendingBundle] = useState(false);
+  const [bundling, setBundling] = useState(false);
+  const [bundleCandidates, setBundleCandidates] = useState<Item[]>([]);
+  const [bundleSelectedIds, setBundleSelectedIds] = useState<number[]>([]);
+  const [bundleLabel, setBundleLabel] = useState("");
+  const [bundlePrice, setBundlePrice] = useState("");
   const [working, setWorking] = useState(false);
   const [name, setName] = useState(item.name);
   const [costBasis, setCostBasis] = useState(String(item.cost_basis));
@@ -82,9 +100,26 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
     }
   }
 
-  function startPending() {
-    setPendingPrice(item.pending_price != null ? String(item.pending_price) : item.listed_price != null ? String(item.listed_price) : "");
+  async function startPending() {
     setError(null);
+    if (item.bundle_id) {
+      setWorking(true);
+      try {
+        const siblings = await getItemsForAcquisition(item.acquisition_id);
+        const members = siblings.filter((i) => i.bundle_id === item.bundle_id);
+        const currentTotal = members.reduce((sum, m) => sum + (m.listed_price ?? 0), 0);
+        setPendingPrice(currentTotal ? String(currentTotal) : "");
+        setPendingBundle(true);
+        setMarkingPending(true);
+      } finally {
+        setWorking(false);
+      }
+      return;
+    }
+    setPendingBundle(false);
+    setPendingPrice(
+      item.pending_price != null ? String(item.pending_price) : item.listed_price != null ? String(item.listed_price) : ""
+    );
     setMarkingPending(true);
   }
 
@@ -92,7 +127,12 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
     setWorking(true);
     setError(null);
     try {
-      await markItemPending(item.id, pendingPrice.trim() ? parseFloat(pendingPrice) || 0 : null);
+      const price = pendingPrice.trim() ? parseFloat(pendingPrice) || 0 : null;
+      if (pendingBundle && item.bundle_id) {
+        await setBundlePending(item.bundle_id, price);
+      } else {
+        await markItemPending(item.id, price);
+      }
       onChanged();
       setMarkingPending(false);
       setOpen(false);
@@ -106,7 +146,11 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
   async function handleUndoPending() {
     setWorking(true);
     try {
-      await updateItemStatus(item.id, "listed");
+      if (item.bundle_id) {
+        await undoBundlePending(item.bundle_id);
+      } else {
+        await updateItemStatus(item.id, "listed");
+      }
       onChanged();
     } finally {
       setWorking(false);
@@ -114,11 +158,83 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
     }
   }
 
-  function completeSale() {
-    const price = item.pending_price ?? item.listed_price;
-    const cashParam = price != null ? `&cash=${price}` : "";
-    router.push(`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${item.id}${cashParam}`);
+  async function goSell() {
+    if (item.bundle_id) {
+      setWorking(true);
+      try {
+        const siblings = await getItemsForAcquisition(item.acquisition_id);
+        const members = siblings.filter(
+          (i) =>
+            i.bundle_id === item.bundle_id &&
+            (i.status === "inventory" || i.status === "listed" || i.status === "pending")
+        );
+        const total = members.reduce((sum, m) => sum + (m.pending_price ?? m.listed_price ?? 0), 0);
+        router.push(saleHref({ acquisitionId: item.acquisition_id, itemIds: members.map((m) => m.id), cashAmount: total || null }));
+      } finally {
+        setWorking(false);
+      }
+    } else {
+      const price = item.pending_price ?? item.listed_price;
+      router.push(saleHref({ acquisitionId: item.acquisition_id, itemIds: [item.id], cashAmount: price }));
+    }
     setOpen(false);
+  }
+
+  async function startBundling() {
+    setError(null);
+    setWorking(true);
+    try {
+      const siblings = await getItemsForAcquisition(item.acquisition_id);
+      const candidates = siblings.filter(
+        (i) => i.id !== item.id && i.bundle_id == null && (i.status === "inventory" || i.status === "listed")
+      );
+      setBundleCandidates(candidates);
+      setBundleSelectedIds([item.id]);
+      setBundleLabel("");
+      setBundlePrice(item.listed_price != null ? String(item.listed_price) : "");
+      setBundling(true);
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  function toggleBundleCandidate(id: number) {
+    setBundleSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  async function handleSaveBundle() {
+    if (bundleSelectedIds.length < 2) {
+      setError("Select at least one other item to bundle with.");
+      return;
+    }
+    setWorking(true);
+    setError(null);
+    try {
+      const selectedItems = [item, ...bundleCandidates.filter((c) => bundleSelectedIds.includes(c.id))];
+      await createBundleListing({
+        items: selectedItems.map((i) => ({ id: i.id, cost_basis: i.cost_basis })),
+        label: bundleLabel.trim() || null,
+        total_listed_price: bundlePrice.trim() ? parseFloat(bundlePrice) || 0 : null,
+      });
+      onChanged();
+      setBundling(false);
+      setOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function handleRemoveFromBundle() {
+    setWorking(true);
+    try {
+      await removeFromBundle(item.id);
+      onChanged();
+    } finally {
+      setWorking(false);
+      setOpen(false);
+    }
   }
 
   function startSplit() {
@@ -150,11 +266,6 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
     } finally {
       setWorking(false);
     }
-  }
-
-  function goToTransaction(itemId: number) {
-    router.push(`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${itemId}`);
-    setOpen(false);
   }
 
   function startEdit() {
@@ -212,6 +323,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                 +{formatCurrency(item.pending_price)} pending sale
               </span>
             )}
+            {item.bundle_label && <span className="ml-2 text-teal-600">&middot; {item.bundle_label}</span>}
           </p>
         </div>
         <StatusBadge status={item.status} />
@@ -226,6 +338,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
             setSplitting(false);
             setListing(false);
             setMarkingPending(false);
+            setBundling(false);
           }}
         >
           <div
@@ -350,10 +463,11 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                 <p className="px-2 font-medium">Mark pending sale</p>
                 <p className="px-2 text-sm text-zinc-500">
                   A buyer agreed to terms. Enter the agreed price — it can differ from the asking price.
+                  {pendingBundle && " This applies to the whole bundle."}
                 </p>
                 {error && <p className="px-2 text-sm text-red-600">{error}</p>}
                 <Input
-                  label="Agreed price (optional)"
+                  label={pendingBundle ? "Total agreed price (optional)" : "Agreed price (optional)"}
                   type="number"
                   inputMode="decimal"
                   step="0.01"
@@ -370,28 +484,75 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                   </Button>
                 </div>
               </div>
+            ) : bundling ? (
+              <div className="flex flex-col gap-3">
+                <p className="px-2 font-medium">List as bundle</p>
+                <p className="px-2 text-sm text-zinc-500">
+                  Pick other inventory items from this deal to list together with &quot;{item.name}&quot; for one
+                  combined price. The price is split across items by cost basis.
+                </p>
+                {error && <p className="px-2 text-sm text-red-600">{error}</p>}
+                <Input label="Bundle label (optional)" value={bundleLabel} onChange={(e) => setBundleLabel(e.target.value)} placeholder="e.g. Camera kit" />
+                <Input
+                  label="Total asking price (optional)"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={bundlePrice}
+                  onChange={(e) => setBundlePrice(e.target.value)}
+                  placeholder="0.00"
+                />
+                {bundleCandidates.length === 0 ? (
+                  <p className="px-2 text-sm text-zinc-500">No other available items in this deal.</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {bundleCandidates.map((c) => (
+                      <Toggle
+                        key={c.id}
+                        label={`${c.name} (${formatCurrency(c.cost_basis)})`}
+                        checked={bundleSelectedIds.includes(c.id)}
+                        onChange={() => toggleBundleCandidate(c.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+                <div className="mt-1 flex gap-2">
+                  <Button variant="secondary" type="button" onClick={() => setBundling(false)} className="flex-1">
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleSaveBundle} disabled={working} className="flex-1">
+                    {working ? "Saving..." : "Save bundle"}
+                  </Button>
+                </div>
+              </div>
             ) : (
               <>
                 <p className="mb-3 px-2 font-medium">{item.name}</p>
                 <div className="flex flex-col gap-1">
                   <SheetAction label="Edit details" onClick={startEdit} />
-                  {item.status === "pending" && (
-                    <SheetAction label="Complete sale" onClick={completeSale} />
-                  )}
                   {isActionable && (
                     <>
-                      <SheetAction label="Mark sold" onClick={() => goToTransaction(item.id)} />
-                      <SheetAction label="Mark as part of bundle sale" onClick={() => goToTransaction(item.id)} />
+                      <SheetAction
+                        label={item.status === "pending" ? "Complete sale" : "Mark sold"}
+                        onClick={goSell}
+                        disabled={working}
+                      />
                       <SheetAction
                         label="Mark traded"
-                        onClick={() => router.push(`/transactions/new?acquisition_id=${item.acquisition_id}&item_id=${item.id}&type=trade`)}
+                        onClick={() => router.push(`/transactions/new?acquisition_id=${item.acquisition_id}&item_ids=${item.id}&type=trade`)}
                       />
                       <SheetAction label="Mark kept" onClick={handleMarkKept} disabled={working} />
-                      {item.status !== "pending" && (
+                      {!item.bundle_id && item.status !== "pending" && (
                         <SheetAction
                           label={item.status === "listed" ? "Edit asking price" : "List item"}
                           onClick={startListing}
                         />
+                      )}
+                      {!item.bundle_id && (item.status === "inventory" || item.status === "listed") && (
+                        <SheetAction label="List as bundle" onClick={startBundling} disabled={working} />
+                      )}
+                      {item.bundle_id && item.status !== "pending" && (
+                        <SheetAction label="Remove from bundle" onClick={handleRemoveFromBundle} disabled={working} />
                       )}
                       {item.status === "listed" && (
                         <SheetAction label="Mark pending sale" onClick={startPending} />

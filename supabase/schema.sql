@@ -24,6 +24,8 @@ CREATE TABLE item (
     notes           TEXT,
     listed_price    NUMERIC(10,2),
     pending_price   NUMERIC(10,2),
+    bundle_id       TEXT,
+    bundle_label    TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -93,6 +95,7 @@ CREATE VIEW current_inventory AS
 SELECT
     i.id, i.name, i.category, i.cost_basis, i.condition,
     i.used_personally, i.notes, i.status, i.listed_price, i.pending_price,
+    i.bundle_id, i.bundle_label,
     a.id AS acquisition_id,
     a.description AS acquisition_desc,
     a.acquired_date,
