@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getEvaluations } from "@/lib/db";
+import { getEvaluations, updateEvaluationNotes } from "@/lib/db";
 import type { Evaluation } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, isValidUrl } from "@/lib/format";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -64,7 +64,7 @@ export default function EvaluationsPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-[14px] font-semibold text-[#1A1A17]">
-                        {e.listing_url ? (
+                        {e.listing_url && isValidUrl(e.listing_url) ? (
                           <Link href={e.listing_url} target="_blank" rel="noopener noreferrer" className="underline">
                             {e.title}
                           </Link>
@@ -85,6 +85,19 @@ export default function EvaluationsPage() {
                   {e.cost_usd != null && (
                     <p className="mt-2 text-[11px] text-[#B3AFA5]">${e.cost_usd.toFixed(4)}</p>
                   )}
+                  <textarea
+                    defaultValue={e.notes ?? ""}
+                    placeholder="Add a personal note..."
+                    rows={1}
+                    className="mt-3 w-full resize-none rounded-[10px] border border-[#ECEAE3] bg-[#FAF9F6] px-2.5 py-1.5 text-[13px] text-[#1A1A17] outline-none focus:border-[#047857]"
+                    onBlur={(ev) => {
+                      const value = ev.target.value.trim();
+                      if (value === (e.notes ?? "")) return;
+                      updateEvaluationNotes(e.id, value || null).then((updated) => {
+                        setEvaluations((prev) => prev.map((x) => (x.id === e.id ? updated : x)));
+                      });
+                    }}
+                  />
                 </Card>
               ))}
             </div>

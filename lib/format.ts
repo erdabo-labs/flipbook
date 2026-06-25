@@ -33,6 +33,15 @@ export function daysSince(dateStr: string): number {
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
+export function isValidUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function saleHref(params: {
   acquisitionId: number;
   itemIds: number[];

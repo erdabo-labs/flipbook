@@ -127,6 +127,7 @@ export interface Evaluation {
   input_tokens: number | null;
   output_tokens: number | null;
   cost_usd: number | null;
+  notes: string | null;
   created_at: string;
 }
 

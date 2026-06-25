@@ -66,6 +66,7 @@ CREATE TABLE evaluation (
     input_tokens            INTEGER,
     output_tokens           INTEGER,
     cost_usd                NUMERIC(10,4),
+    notes                   TEXT,
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

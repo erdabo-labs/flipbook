@@ -580,3 +580,9 @@ export async function getEvaluation(id: number): Promise<Evaluation | null> {
   }
   return data as Evaluation;
 }
+
+export async function updateEvaluationNotes(id: number, notes: string | null): Promise<Evaluation> {
+  const { data, error } = await supabase.from("evaluation").update({ notes }).eq("id", id).select().single();
+  if (error) throw error;
+  return data as Evaluation;
+}
