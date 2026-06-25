@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { getEvaluations, updateEvaluationNotes } from "@/lib/db";
+import { useRouter } from "next/navigation";
+import { getEvaluations } from "@/lib/db";
 import type { Evaluation } from "@/lib/types";
-import { formatCurrency, formatDate, isValidUrl } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -17,6 +17,7 @@ function scoreColor(score: number): string {
 }
 
 export default function EvaluationsPage() {
+  const router = useRouter();
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,18 +61,10 @@ export default function EvaluationsPage() {
           ) : (
             <div className="flex flex-col gap-3">
               {evaluations.map((e) => (
-                <Card key={e.id}>
+                <Card key={e.id} onClick={() => router.push(`/evaluations/${e.id}`)} className="min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-[14px] font-semibold text-[#1A1A17]">
-                        {e.listing_url && isValidUrl(e.listing_url) ? (
-                          <Link href={e.listing_url} target="_blank" rel="noopener noreferrer" className="underline">
-                            {e.title}
-                          </Link>
-                        ) : (
-                          e.title
-                        )}
-                      </p>
+                      <p className="truncate text-[14px] font-semibold text-[#1A1A17]">{e.title}</p>
                       <p className="text-[12px] text-[#8C887D]">
                         {formatDate(e.created_at)} &middot; {formatCurrency(e.price)}
                       </p>
@@ -81,23 +74,11 @@ export default function EvaluationsPage() {
                       <span className={`font-mono text-base font-bold ${scoreColor(e.score)}`}>{e.score}/10</span>
                     </div>
                   </div>
-                  <p className="mt-2 text-[13px] text-[#1A1A17]">{e.verdict}</p>
-                  {e.cost_usd != null && (
-                    <p className="mt-2 text-[11px] text-[#B3AFA5]">${e.cost_usd.toFixed(4)}</p>
-                  )}
-                  <textarea
-                    defaultValue={e.notes ?? ""}
-                    placeholder="Add a personal note..."
-                    rows={1}
-                    className="mt-3 w-full resize-none rounded-[10px] border border-[#ECEAE3] bg-[#FAF9F6] px-2.5 py-1.5 text-[13px] text-[#1A1A17] outline-none focus:border-[#047857]"
-                    onBlur={(ev) => {
-                      const value = ev.target.value.trim();
-                      if (value === (e.notes ?? "")) return;
-                      updateEvaluationNotes(e.id, value || null).then((updated) => {
-                        setEvaluations((prev) => prev.map((x) => (x.id === e.id ? updated : x)));
-                      });
-                    }}
-                  />
+                  <p className="mt-2 line-clamp-2 text-[13px] text-[#1A1A17]">{e.verdict}</p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    {e.cost_usd != null && <p className="text-[11px] text-[#B3AFA5]">${e.cost_usd.toFixed(4)}</p>}
+                    {e.notes && <p className="truncate text-[11px] text-[#8C887D]">📝 {e.notes}</p>}
+                  </div>
                 </Card>
               ))}
             </div>

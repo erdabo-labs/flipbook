@@ -587,3 +587,27 @@ export async function updateEvaluationNotes(id: number, notes: string | null): P
   if (error) throw error;
   return data as Evaluation;
 }
+
+export async function deleteEvaluation(id: number): Promise<void> {
+  const { error } = await supabase.from("evaluation").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteAcquisition(id: number): Promise<void> {
+  const items = await getItemsForAcquisition(id);
+  const itemIds = items.map((i) => i.id);
+  if (itemIds.length > 0) {
+    const { data: tis, error: tiError } = await supabase
+      .from("transaction_item")
+      .select("transaction_id")
+      .in("item_id", itemIds);
+    if (tiError) throw tiError;
+    const txIds = Array.from(new Set((tis || []).map((t) => t.transaction_id)));
+    if (txIds.length > 0) {
+      const { error: txDeleteError } = await supabase.from("transaction").delete().in("id", txIds);
+      if (txDeleteError) throw txDeleteError;
+    }
+  }
+  const { error } = await supabase.from("acquisition").delete().eq("id", id);
+  if (error) throw error;
+}

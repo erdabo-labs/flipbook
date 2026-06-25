@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+  deleteAcquisition,
   deleteTransaction,
   getAcquisition,
   getAcquisitionPnl,
@@ -25,7 +26,9 @@ type RecentTx = Transaction & { items: { item_id: number; item_name: string; dir
 
 export default function AcquisitionDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = Number(params.id);
+  const [deleting, setDeleting] = useState(false);
 
   const [acquisition, setAcquisition] = useState<Acquisition | null>(null);
   const [pnl, setPnl] = useState<AcquisitionPnl | null>(null);
@@ -93,6 +96,20 @@ export default function AcquisitionDetailPage() {
     });
     setEditError(null);
     setEditing(true);
+  }
+
+  async function handleDelete() {
+    if (!acquisition) return;
+    if (!window.confirm("Delete this deal and all its items and transactions? This can't be undone.")) return;
+    setDeleting(true);
+    setEditError(null);
+    try {
+      await deleteAcquisition(acquisition.id);
+      router.push("/acquisitions");
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : String(err));
+      setDeleting(false);
+    }
   }
 
   async function handleSaveEdit() {
@@ -244,6 +261,14 @@ export default function AcquisitionDetailPage() {
               {saving ? "Saving..." : "Save"}
             </Button>
           </div>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="mt-1 text-sm text-[#DC2626] underline"
+          >
+            {deleting ? "Deleting..." : "Delete this deal"}
+          </button>
         </div>
       ) : (
         <div className="mb-4">

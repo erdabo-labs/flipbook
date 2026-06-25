@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { LinkifiedText } from "@/components/ui/LinkifiedText";
 import { formatCurrency } from "@/lib/format";
 import { getInventoryItems } from "@/lib/db";
 import type { Evaluation, EvaluationKind, Item } from "@/lib/types";
@@ -17,7 +18,7 @@ function scoreColor(score: number): string {
 
 function ResultCard({ result }: { result: Evaluation }) {
   return (
-    <Card className="mt-6">
+    <Card className="mt-6 min-w-0">
       <div className="flex items-center justify-between">
         <span className={`text-3xl font-bold ${scoreColor(result.score)}`}>{result.score}/10</span>
         <span className="text-sm font-semibold text-[#8C887D]">{result.verdict}</span>
@@ -26,12 +27,14 @@ function ResultCard({ result }: { result: Evaluation }) {
         Estimated resale: {formatCurrency(result.estimated_resale_low)}–
         {formatCurrency(result.estimated_resale_high)}
       </p>
-      <p className="mt-2 text-sm text-[#1A1A17]">{result.reasoning}</p>
+      <p className="mt-2 text-sm text-[#1A1A17]">
+        <LinkifiedText text={result.reasoning} />
+      </p>
       {result.red_flags.length > 0 && (
         <ul className="mt-3 flex flex-col gap-1">
           {result.red_flags.map((flag, i) => (
             <li key={i} className="text-sm text-[#B45309]">
-              ⚠ {flag}
+              ⚠ <LinkifiedText text={flag} />
             </li>
           ))}
         </ul>
