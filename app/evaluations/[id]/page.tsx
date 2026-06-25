@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
 import { LinkifiedText } from "@/components/ui/LinkifiedText";
+import { FlippyMark } from "@/components/ui/FlippyMark";
 
 function scoreColor(score: number): string {
   if (score >= 7) return "text-[#047857]";
@@ -165,8 +166,9 @@ export default function EvaluationDetailPage() {
         )}
         {e.suggested_offer != null && (
           <div className="mt-3 rounded-[10px] bg-[#ECFDF5] p-3">
-            <p className="text-sm font-semibold text-[#047857]">
-              🤖 Flippy suggests offering {formatCurrency(e.suggested_offer)}
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-[#047857]">
+              <FlippyMark className="h-4 w-4" />
+              Flippy suggests offering {formatCurrency(e.suggested_offer)}
             </p>
             {e.suggested_message && (
               <p className="mt-1 text-sm text-[#1A1A17]">&ldquo;{e.suggested_message}&rdquo;</p>

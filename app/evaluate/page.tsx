@@ -6,6 +6,7 @@ import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LinkifiedText } from "@/components/ui/LinkifiedText";
+import { FlippyMark } from "@/components/ui/FlippyMark";
 import { formatCurrency } from "@/lib/format";
 import { getEvaluation, getInventoryItems } from "@/lib/db";
 import type { Evaluation, EvaluationKind, Item } from "@/lib/types";
@@ -41,8 +42,9 @@ function ResultCard({ result }: { result: Evaluation }) {
       )}
       {result.suggested_offer != null && (
         <div className="mt-3 rounded-[10px] bg-[#ECFDF5] p-3">
-          <p className="text-sm font-semibold text-[#047857]">
-            🤖 Flippy suggests {result.kind === "grade" || result.kind === "grade_deal" ? "listing it at" : "offering"}{" "}
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-[#047857]">
+            <FlippyMark className="h-4 w-4" />
+            Flippy suggests {result.kind === "grade" || result.kind === "grade_deal" ? "listing it at" : "offering"}{" "}
             {formatCurrency(result.suggested_offer)}
           </p>
           {result.suggested_message && (
