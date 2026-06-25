@@ -93,6 +93,11 @@ CREATE TABLE flippy_profile (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- This app is single-user and accessed via the anon key with no auth-based
+-- row ownership, matching the other tables above, so RLS stays off here too.
+ALTER TABLE evaluation_message DISABLE ROW LEVEL SECURITY;
+ALTER TABLE flippy_profile DISABLE ROW LEVEL SECURITY;
+
 CREATE VIEW acquisition_pnl AS
 WITH cash AS (
     SELECT DISTINCT a.id AS acquisition_id, t.id AS transaction_id, t.cash_amount
