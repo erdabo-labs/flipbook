@@ -59,6 +59,7 @@ function EvaluateForm() {
   const [listingUrl, setListingUrl] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [notes, setNotes] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   const [itemId, setItemId] = useState(searchParams.get("item_id") ?? "");
   const [loading, setLoading] = useState(false);
@@ -100,6 +101,7 @@ function EvaluateForm() {
           listing_url: kind === "listing" ? listingUrl.trim() : "",
           price: parseFloat(price),
           description: description.trim(),
+          notes: notes.trim(),
           item_id: kind === "offer" ? Number(itemId) : null,
         }),
       });
@@ -208,6 +210,12 @@ function EvaluateForm() {
             />
           </>
         )}
+        <Textarea
+          label="Your notes (optional)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Your own read on this — seller seems motivated, you suspect it's a flipper, gut feeling, etc. Weighed as your opinion, not a verified fact."
+        />
         <Button type="submit" disabled={loading} className="mt-2">
           {loading ? "Evaluating..." : "Evaluate"}
         </Button>

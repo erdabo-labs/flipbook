@@ -19,7 +19,7 @@ interface EvaluateResult {
 export async function POST(request: Request) {
   const body = await request.json();
   const kind: EvaluationKind = body.kind === "offer" ? "offer" : "listing";
-  const { title, price, description, listing_url, item_id } = body;
+  const { title, price, description, notes, listing_url, item_id } = body;
 
   if (!title || typeof price !== "number") {
     return NextResponse.json({ error: "Title and price are required" }, { status: 400 });
@@ -49,18 +49,22 @@ export async function POST(request: Request) {
         "Weigh the offer against the item's cost basis, current asking price, and current market value (use web search for current resale comps — don't rely on memorized prices). " +
         "If the offer includes a trade item, assess how easy that traded item would be to resell too. " +
         "The user has already inspected condition in person, so don't factor unknown-condition risk. " +
+        "The user may also include their own notes/opinion — treat that as their personal read on the situation, not a verified fact, and weigh it accordingly alongside the hard data. " +
         "Respond with ONLY a JSON object, no prose, matching this shape: " +
         '{"score": number 1-10 (10 = take the offer immediately), "verdict": short string, "estimated_resale_low": number, "estimated_resale_high": number, "reasoning": short string, "red_flags": string[]}'
       : "You evaluate secondhand local marketplace listings (FB Marketplace, Craigslist, OfferUp, KSL) for resale flipping potential. " +
         "The buyer has already inspected the item's condition in person and confirmed it is not junk, so do not factor unknown-condition risk into your score. " +
         "Use web search to check current sold/asking prices for this item (eBay, FB Marketplace, etc.) rather than relying on memorized prices, since market values change. " +
+        "The user may also include their own notes/opinion — treat that as their personal read on the situation, not a verified fact, and weigh it accordingly alongside the hard data. " +
         "Respond with ONLY a JSON object, no prose, matching this shape: " +
         '{"score": number 1-10, "verdict": short string, "estimated_resale_low": number, "estimated_resale_high": number, "reasoning": short string, "red_flags": string[]}';
 
+  const notesSection = notes ? `\n\nUser's own notes/opinion (weigh as opinion, not verified fact): ${notes}` : "";
+
   const inputText =
     kind === "offer"
-      ? `Offer: $${price}\nNotes: ${description || "(none provided)"}${itemContext}`
-      : `Title: ${title}\nAsking price: $${price}\nDescription: ${description || "(none provided)"}`;
+      ? `Offer: $${price}\nOffer details: ${description || "(none provided)"}${itemContext}${notesSection}`
+      : `Title: ${title}\nAsking price: $${price}\nDescription: ${description || "(none provided)"}${notesSection}`;
 
   const openai = new OpenAI();
   const response = await openai.responses.create({
@@ -92,6 +96,7 @@ export async function POST(request: Request) {
     listing_url: listing_url || null,
     price,
     description: description || null,
+    notes: notes || null,
     item_id: kind === "offer" && item_id ? item_id : null,
     score: result.score,
     verdict: result.verdict,

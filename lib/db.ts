@@ -547,6 +547,7 @@ export async function createEvaluation(input: {
   listing_url: string | null;
   price: number;
   description: string | null;
+  notes: string | null;
   item_id: number | null;
   score: number;
   verdict: string;
