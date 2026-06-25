@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { deleteEvaluation, getEvaluation, updateEvaluationNotes } from "@/lib/db";
-import type { Evaluation } from "@/lib/types";
+import { deleteEvaluation, getEvaluation, getEvaluationMessages, updateEvaluationNotes } from "@/lib/db";
+import type { Evaluation, EvaluationMessage } from "@/lib/types";
 import { formatCurrency, formatDate, isValidUrl } from "@/lib/format";
 import { LoadingState } from "@/components/ui/Empty";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button, LinkButton } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
 import { LinkifiedText } from "@/components/ui/LinkifiedText";
 
@@ -28,12 +29,18 @@ export default function EvaluationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [messages, setMessages] = useState<EvaluationMessage[]>([]);
+  const [question, setQuestion] = useState("");
+  const [asking, setAsking] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     try {
       const e = await getEvaluation(id);
       setEvaluation(e);
       setNotes(e?.notes ?? "");
+      const msgs = await getEvaluationMessages(id);
+      setMessages(msgs);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -45,6 +52,38 @@ export default function EvaluationDetailPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount
     load();
   }, [load]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  async function handleAsk(ev: React.FormEvent) {
+    ev.preventDefault();
+    const text = question.trim();
+    if (!text || !evaluation) return;
+    setAsking(true);
+    setError(null);
+    setMessages((prev) => [
+      ...prev,
+      { id: -1, evaluation_id: evaluation.id, role: "user", content: text, input_tokens: null, output_tokens: null, cost_usd: null, created_at: new Date().toISOString() },
+    ]);
+    setQuestion("");
+    try {
+      const res = await fetch(`/api/evaluations/${evaluation.id}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not get an answer");
+      const msgs = await getEvaluationMessages(evaluation.id);
+      setMessages(msgs);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setAsking(false);
+    }
+  }
 
   async function handleNotesBlur() {
     if (!evaluation) return;
@@ -124,6 +163,16 @@ export default function EvaluationDetailPage() {
             ))}
           </ul>
         )}
+        {e.suggested_offer != null && (
+          <div className="mt-3 rounded-[10px] bg-[#ECFDF5] p-3">
+            <p className="text-sm font-semibold text-[#047857]">
+              🤖 Flippy suggests offering {formatCurrency(e.suggested_offer)}
+            </p>
+            {e.suggested_message && (
+              <p className="mt-1 text-sm text-[#1A1A17]">&ldquo;{e.suggested_message}&rdquo;</p>
+            )}
+          </div>
+        )}
         {(e.input_tokens != null || e.cost_usd != null) && (
           <p className="mt-3 border-t border-[#ECEAE3] pt-2 text-xs text-[#B3AFA5]">
             {e.input_tokens != null && e.output_tokens != null && (
@@ -154,6 +203,38 @@ export default function EvaluationDetailPage() {
           onBlur={handleNotesBlur}
           placeholder="Add a personal note..."
         />
+      </div>
+
+      <LinkButton href={`/evaluate?from=${e.id}`} variant="secondary" className="mt-4 w-full">
+        Edit details &amp; re-evaluate
+      </LinkButton>
+
+      <div className="mt-6">
+        <p className="mb-2 text-sm font-medium text-[#1A1A17]">Ask Flippy a follow-up</p>
+        <div className="flex flex-col gap-2">
+          {messages.map((m) => (
+            <div
+              key={m.id}
+              className={`max-w-[85%] rounded-[12px] px-3 py-2 text-sm ${
+                m.role === "user" ? "self-end bg-[#047857] text-white" : "self-start bg-[#F4F2EC] text-[#1A1A17]"
+              }`}
+            >
+              <LinkifiedText text={m.content} />
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+        <form onSubmit={handleAsk} className="mt-3 flex gap-2">
+          <input
+            value={question}
+            onChange={(ev) => setQuestion(ev.target.value)}
+            placeholder="e.g. should I counter at $50?"
+            className="min-h-[44px] flex-1 rounded-[12px] border border-[#E3E0D7] bg-white px-3 py-2 text-sm focus:border-[#047857] focus:outline-none"
+          />
+          <Button type="submit" disabled={asking || !question.trim()}>
+            {asking ? "..." : "Ask"}
+          </Button>
+        </form>
       </div>
 
       <button

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getEvaluations } from "@/lib/db";
 import type { Evaluation } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
+import Link from "next/link";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -36,10 +37,13 @@ export default function EvaluationsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">Evaluations</h1>
+      <div className="mb-1 flex items-center justify-between">
+        <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">🤖 Flippy</h1>
         <LinkButton href="/evaluate">+ New</LinkButton>
       </div>
+      <Link href="/settings" className="mb-5 inline-block text-sm font-medium text-[#8C887D] underline">
+        ⚙ Configure Flippy
+      </Link>
 
       {loading && <LoadingState />}
       {error && <p className="text-sm text-[#DC2626]">{error}</p>}

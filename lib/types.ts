@@ -124,11 +124,36 @@ export interface Evaluation {
   estimated_resale_high: number;
   reasoning: string;
   red_flags: string[];
+  suggested_offer: number | null;
+  suggested_message: string | null;
+  previous_evaluation_id: number | null;
   input_tokens: number | null;
   output_tokens: number | null;
   cost_usd: number | null;
   notes: string | null;
   created_at: string;
+}
+
+export type MessageRole = "user" | "assistant";
+
+export interface EvaluationMessage {
+  id: number;
+  evaluation_id: number;
+  role: MessageRole;
+  content: string;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+  created_at: string;
+}
+
+export interface FlippyProfile {
+  id: number;
+  location: string | null;
+  platforms: string | null;
+  ships_items: boolean;
+  style_notes: string | null;
+  updated_at: string;
 }
 
 export const SOURCES = [

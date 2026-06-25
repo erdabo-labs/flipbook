@@ -63,11 +63,34 @@ CREATE TABLE evaluation (
     estimated_resale_high   NUMERIC(10,2) NOT NULL,
     reasoning               TEXT NOT NULL,
     red_flags               JSONB NOT NULL DEFAULT '[]',
+    suggested_offer         NUMERIC(10,2),
+    suggested_message       TEXT,
+    previous_evaluation_id  BIGINT REFERENCES evaluation(id) ON DELETE SET NULL,
     input_tokens            INTEGER,
     output_tokens           INTEGER,
     cost_usd                NUMERIC(10,4),
     notes                   TEXT,
     created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE evaluation_message (
+    id              BIGSERIAL PRIMARY KEY,
+    evaluation_id   BIGINT NOT NULL REFERENCES evaluation(id) ON DELETE CASCADE,
+    role            TEXT NOT NULL CHECK (role IN ('user','assistant')),
+    content         TEXT NOT NULL,
+    input_tokens    INTEGER,
+    output_tokens   INTEGER,
+    cost_usd        NUMERIC(10,4),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE flippy_profile (
+    id              BIGINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    location        TEXT,
+    platforms       TEXT,
+    ships_items     BOOLEAN NOT NULL DEFAULT FALSE,
+    style_notes     TEXT,
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE VIEW acquisition_pnl AS

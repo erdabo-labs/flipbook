@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { createEvaluation } from "@/lib/db";
+import { createEvaluation, getFlippyProfile } from "@/lib/db";
 import type { EvaluationKind } from "@/lib/types";
 
 const INPUT_COST_PER_TOKEN = 0.25 / 1_000_000;
@@ -14,12 +14,14 @@ interface EvaluateResult {
   estimated_resale_high: number;
   reasoning: string;
   red_flags: string[];
+  suggested_offer: number | null;
+  suggested_message: string | null;
 }
 
 export async function POST(request: Request) {
   const body = await request.json();
   const kind: EvaluationKind = body.kind === "offer" ? "offer" : "listing";
-  const { title, price, description, notes, listing_url, item_id } = body;
+  const { title, price, description, notes, listing_url, item_id, previous_evaluation_id } = body;
 
   if (!title || typeof price !== "number") {
     return NextResponse.json({ error: "Title and price are required" }, { status: 400 });
@@ -43,21 +45,45 @@ export async function POST(request: Request) {
       (acquisition ? `Acquired: ${acquisition.acquired_date} (${acquisition.description})\n` : "");
   }
 
+  const profile = await getFlippyProfile();
+  const profileSection = profile
+    ? `\n\nAbout the user you're helping (use this to tailor your evaluation):\n` +
+      (profile.location ? `Location: ${profile.location}\n` : "") +
+      (profile.platforms ? `Sells on: ${profile.platforms}\n` : "") +
+      `Ships items: ${profile.ships_items ? "yes" : "no — local pickup/meetup only, factor in local demand, not nationwide eBay-only demand"}\n` +
+      (profile.style_notes ? `Their personal evaluation style/preferences: ${profile.style_notes}\n` : "")
+    : "";
+
+  const personality =
+    "You are Flippy, a sharp, friendly AI sidekick for a local reseller. Keep verdicts punchy and a little personable, but always substantive — no fluff. ";
+
+  const offerGuidance =
+    "Also decide whether a counter-offer is warranted: if the current price/offer is already solid, set suggested_offer to null and say so plainly in the verdict (don't suggest lowballing a fair deal). " +
+    "If there's clearly room to negotiate, set suggested_offer to the number you'd propose and suggested_message to a short, casual message the user could send to make that offer.";
+
   const instructions =
     kind === "offer"
-      ? "You evaluate incoming offers (cash or trade) on items the user already owns and is trying to sell. " +
+      ? personality +
+        "You evaluate incoming offers (cash or trade) on items the user already owns and is trying to sell. " +
         "Weigh the offer against the item's cost basis, current asking price, and current market value (use web search for current resale comps — don't rely on memorized prices). " +
         "If the offer includes a trade item, assess how easy that traded item would be to resell too. " +
         "The user has already inspected condition in person, so don't factor unknown-condition risk. " +
         "The user may also include their own notes/opinion — treat that as their personal read on the situation, not a verified fact, and weigh it accordingly alongside the hard data. " +
-        "Respond with ONLY a JSON object, no prose, matching this shape: " +
-        '{"score": number 1-10 (10 = take the offer immediately), "verdict": short string, "estimated_resale_low": number, "estimated_resale_high": number, "reasoning": short string, "red_flags": string[]}'
-      : "You evaluate secondhand local marketplace listings (FB Marketplace, Craigslist, OfferUp, KSL) for resale flipping potential. " +
+        "suggested_offer here means the counter-offer to propose back to the buyer if their offer is too low. " +
+        offerGuidance +
+        profileSection +
+        " Respond with ONLY a JSON object, no prose, matching this shape: " +
+        '{"score": number 1-10 (10 = take the offer immediately), "verdict": short string, "estimated_resale_low": number, "estimated_resale_high": number, "reasoning": short string, "red_flags": string[], "suggested_offer": number|null, "suggested_message": string|null}'
+      : personality +
+        "You evaluate secondhand local marketplace listings (FB Marketplace, Craigslist, OfferUp, KSL) for resale flipping potential. " +
         "The buyer has already inspected the item's condition in person and confirmed it is not junk, so do not factor unknown-condition risk into your score. " +
         "Use web search to check current sold/asking prices for this item (eBay, FB Marketplace, etc.) rather than relying on memorized prices, since market values change. " +
         "The user may also include their own notes/opinion — treat that as their personal read on the situation, not a verified fact, and weigh it accordingly alongside the hard data. " +
-        "Respond with ONLY a JSON object, no prose, matching this shape: " +
-        '{"score": number 1-10, "verdict": short string, "estimated_resale_low": number, "estimated_resale_high": number, "reasoning": short string, "red_flags": string[]}';
+        "suggested_offer here means what the user should offer the seller, if lower than asking price is worth trying. " +
+        offerGuidance +
+        profileSection +
+        " Respond with ONLY a JSON object, no prose, matching this shape: " +
+        '{"score": number 1-10, "verdict": short string, "estimated_resale_low": number, "estimated_resale_high": number, "reasoning": short string, "red_flags": string[], "suggested_offer": number|null, "suggested_message": string|null}';
 
   const notesSection = notes ? `\n\nUser's own notes/opinion (weigh as opinion, not verified fact): ${notes}` : "";
 
@@ -105,6 +131,9 @@ export async function POST(request: Request) {
       estimated_resale_high: result.estimated_resale_high,
       reasoning: result.reasoning,
       red_flags: result.red_flags,
+      suggested_offer: result.suggested_offer ?? null,
+      suggested_message: result.suggested_message ?? null,
+      previous_evaluation_id: typeof previous_evaluation_id === "number" ? previous_evaluation_id : null,
       input_tokens: inputTokens,
       output_tokens: outputTokens,
       cost_usd: costUsd,

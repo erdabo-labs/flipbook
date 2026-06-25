@@ -6,6 +6,8 @@ import type {
   CurrentInventoryRow,
   Evaluation,
   EvaluationKind,
+  EvaluationMessage,
+  FlippyProfile,
   Item,
   ItemCondition,
   ItemStatus,
@@ -555,6 +557,9 @@ export async function createEvaluation(input: {
   estimated_resale_high: number;
   reasoning: string;
   red_flags: string[];
+  suggested_offer: number | null;
+  suggested_message: string | null;
+  previous_evaluation_id: number | null;
   input_tokens: number | null;
   output_tokens: number | null;
   cost_usd: number | null;
@@ -591,6 +596,37 @@ export async function updateEvaluationNotes(id: number, notes: string | null): P
 export async function deleteEvaluation(id: number): Promise<void> {
   const { error } = await supabase.from("evaluation").delete().eq("id", id);
   if (error) throw error;
+}
+
+export async function getEvaluationMessages(evaluationId: number): Promise<EvaluationMessage[]> {
+  const { data, error } = await supabase
+    .from("evaluation_message")
+    .select("*")
+    .eq("evaluation_id", evaluationId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data as EvaluationMessage[];
+}
+
+export async function getFlippyProfile(): Promise<FlippyProfile | null> {
+  const { data, error } = await supabase.from("flippy_profile").select("*").eq("id", 1).maybeSingle();
+  if (error) throw error;
+  return data as FlippyProfile | null;
+}
+
+export async function saveFlippyProfile(input: {
+  location: string | null;
+  platforms: string | null;
+  ships_items: boolean;
+  style_notes: string | null;
+}): Promise<FlippyProfile> {
+  const { data, error } = await supabase
+    .from("flippy_profile")
+    .upsert({ id: 1, ...input, updated_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as FlippyProfile;
 }
 
 export async function deleteAcquisition(id: number): Promise<void> {

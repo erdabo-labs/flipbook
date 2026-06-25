@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { LinkifiedText } from "@/components/ui/LinkifiedText";
 import { formatCurrency } from "@/lib/format";
-import { getInventoryItems } from "@/lib/db";
+import { getEvaluation, getInventoryItems } from "@/lib/db";
 import type { Evaluation, EvaluationKind, Item } from "@/lib/types";
 
 function scoreColor(score: number): string {
@@ -39,6 +39,16 @@ function ResultCard({ result }: { result: Evaluation }) {
           ))}
         </ul>
       )}
+      {result.suggested_offer != null && (
+        <div className="mt-3 rounded-[10px] bg-[#ECFDF5] p-3">
+          <p className="text-sm font-semibold text-[#047857]">
+            🤖 Flippy suggests offering {formatCurrency(result.suggested_offer)}
+          </p>
+          {result.suggested_message && (
+            <p className="mt-1 text-sm text-[#1A1A17]">&ldquo;{result.suggested_message}&rdquo;</p>
+          )}
+        </div>
+      )}
       {(result.input_tokens != null || result.cost_usd != null) && (
         <p className="mt-3 border-t border-[#ECEAE3] pt-2 text-xs text-[#B3AFA5]">
           {result.input_tokens != null && result.output_tokens != null && (
@@ -68,12 +78,27 @@ function EvaluateForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Evaluation | null>(null);
+  const reEvaluateId = searchParams.get("from");
 
   useEffect(() => {
     if (kind === "offer" && items.length === 0) {
       getInventoryItems().then(setItems).catch((e) => setError(e.message));
     }
   }, [kind, items.length]);
+
+  useEffect(() => {
+    if (!reEvaluateId) return;
+    getEvaluation(Number(reEvaluateId)).then((e) => {
+      if (!e) return;
+      setKind(e.kind);
+      setTitle(e.title);
+      setListingUrl(e.listing_url ?? "");
+      setPrice(String(e.price));
+      setDescription(e.description ?? "");
+      setNotes(e.notes ?? "");
+      if (e.item_id) setItemId(String(e.item_id));
+    });
+  }, [reEvaluateId]);
 
   const selectedItem = items.find((i) => i.id === Number(itemId));
 
@@ -106,6 +131,7 @@ function EvaluateForm() {
           description: description.trim(),
           notes: notes.trim(),
           item_id: kind === "offer" ? Number(itemId) : null,
+          previous_evaluation_id: reEvaluateId ? Number(reEvaluateId) : null,
         }),
       });
       const data = await res.json();
@@ -124,7 +150,7 @@ function EvaluateForm() {
         <button type="button" onClick={() => router.back()} className="text-sm font-medium text-[#8C887D]">
           Cancel
         </button>
-        <h1 className="text-[14px] font-bold">New evaluation</h1>
+        <h1 className="text-[14px] font-bold">{reEvaluateId ? "Re-evaluate with Flippy" : "Ask Flippy"}</h1>
         <span className="w-12" />
       </div>
 

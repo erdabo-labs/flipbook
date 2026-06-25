@@ -8,7 +8,7 @@ const ITEMS = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/acquisitions", label: "Deals", icon: "list" },
   { href: "/inventory", label: "Stock", icon: "box" },
-  { href: "/evaluations", label: "Evals", icon: "spark" },
+  { href: "/evaluations", label: "Flippy", icon: "spark" },
 ];
 
 function Icon({ name }: { name: string }) {
@@ -142,7 +142,7 @@ export function BottomNav() {
                 onClick={() => go("/evaluate")}
                 className="flex min-h-12 items-center rounded-[12px] px-3 text-left text-base font-medium text-[#1A1A17] active:bg-[#F4F2EC]"
               >
-                Evaluate a deal
+                Ask Flippy to evaluate
               </button>
               <button
                 type="button"

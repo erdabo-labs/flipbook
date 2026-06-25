@@ -17,7 +17,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Flipbook",
-  description: "Track local buy/sell/trade deals",
+  description: "Track local buy/sell/trade deals, with Flippy as your AI sidekick",
 };
 
 export default function RootLayout({
