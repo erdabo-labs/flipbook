@@ -90,24 +90,28 @@ export async function POST(request: Request) {
       ? inputTokens * INPUT_COST_PER_TOKEN + outputTokens * OUTPUT_COST_PER_TOKEN
       : null;
 
-  const evaluation = await createEvaluation({
-    kind,
-    title,
-    listing_url: listing_url || null,
-    price,
-    description: description || null,
-    notes: notes || null,
-    item_id: kind === "offer" && item_id ? item_id : null,
-    score: result.score,
-    verdict: result.verdict,
-    estimated_resale_low: result.estimated_resale_low,
-    estimated_resale_high: result.estimated_resale_high,
-    reasoning: result.reasoning,
-    red_flags: result.red_flags,
-    input_tokens: inputTokens,
-    output_tokens: outputTokens,
-    cost_usd: costUsd,
-  });
-
-  return NextResponse.json(evaluation);
+  try {
+    const evaluation = await createEvaluation({
+      kind,
+      title,
+      listing_url: listing_url || null,
+      price,
+      description: description || null,
+      notes: notes || null,
+      item_id: kind === "offer" && item_id ? item_id : null,
+      score: result.score,
+      verdict: result.verdict,
+      estimated_resale_low: result.estimated_resale_low,
+      estimated_resale_high: result.estimated_resale_high,
+      reasoning: result.reasoning,
+      red_flags: result.red_flags,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      cost_usd: costUsd,
+    });
+    return NextResponse.json(evaluation);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Could not save evaluation";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
