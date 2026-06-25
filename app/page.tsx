@@ -12,6 +12,7 @@ import { SummaryStats } from "@/components/SummaryStats";
 import { AcquisitionCard } from "@/components/AcquisitionCard";
 import { LinkButton } from "@/components/ui/Button";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
+import { FlipbookLogo } from "@/components/ui/FlipbookLogo";
 import { formatDate, formatPnl, pnlColorClass } from "@/lib/format";
 import { AUTH_STORAGE_KEY } from "@/app/login/page";
 
@@ -39,10 +40,7 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <svg className="h-6 w-6" viewBox="0 0 40 40" fill="none" stroke="#047857" strokeWidth={3} strokeLinejoin="round">
-            <path d="M2 4c6-2.4 12-2.4 18 0v32c-6-2.4-12-2.4-18 0z" />
-            <path d="M38 4c-6-2.4-12-2.4-18 0v32c6-2.4 12-2.4 18 0z" />
-          </svg>
+          <FlipbookLogo className="h-6 w-6" />
           <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">Flipbook</h1>
         </div>
         <Link
