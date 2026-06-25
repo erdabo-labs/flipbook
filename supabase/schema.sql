@@ -48,6 +48,27 @@ CREATE TABLE transaction_item (
     direction       TEXT NOT NULL CHECK (direction IN ('outbound','inbound'))
 );
 
+CREATE TABLE evaluation (
+    id                      BIGSERIAL PRIMARY KEY,
+    kind                    TEXT NOT NULL DEFAULT 'listing'
+                            CHECK (kind IN ('listing','offer')),
+    title                   TEXT NOT NULL,
+    listing_url             TEXT,
+    price                   NUMERIC(10,2) NOT NULL,
+    description             TEXT,
+    item_id                 BIGINT REFERENCES item(id) ON DELETE SET NULL,
+    score                   INTEGER NOT NULL,
+    verdict                 TEXT NOT NULL,
+    estimated_resale_low    NUMERIC(10,2) NOT NULL,
+    estimated_resale_high   NUMERIC(10,2) NOT NULL,
+    reasoning               TEXT NOT NULL,
+    red_flags               JSONB NOT NULL DEFAULT '[]',
+    input_tokens            INTEGER,
+    output_tokens           INTEGER,
+    cost_usd                NUMERIC(10,4),
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE VIEW acquisition_pnl AS
 WITH cash AS (
     SELECT DISTINCT a.id AS acquisition_id, t.id AS transaction_id, t.cash_amount

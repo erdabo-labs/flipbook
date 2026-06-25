@@ -4,6 +4,8 @@ import type {
   Acquisition,
   AcquisitionPnl,
   CurrentInventoryRow,
+  Evaluation,
+  EvaluationKind,
   Item,
   ItemCondition,
   ItemStatus,
@@ -537,4 +539,44 @@ export async function updateItemDetails(
 ): Promise<void> {
   const { error } = await supabase.from("item").update(input).eq("id", itemId);
   if (error) throw error;
+}
+
+export async function createEvaluation(input: {
+  kind: EvaluationKind;
+  title: string;
+  listing_url: string | null;
+  price: number;
+  description: string | null;
+  item_id: number | null;
+  score: number;
+  verdict: string;
+  estimated_resale_low: number;
+  estimated_resale_high: number;
+  reasoning: string;
+  red_flags: string[];
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+}): Promise<Evaluation> {
+  const { data, error } = await supabase.from("evaluation").insert(input).select().single();
+  if (error) throw error;
+  return data as Evaluation;
+}
+
+export async function getEvaluations(): Promise<Evaluation[]> {
+  const { data, error } = await supabase
+    .from("evaluation")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data as Evaluation[];
+}
+
+export async function getEvaluation(id: number): Promise<Evaluation | null> {
+  const { data, error } = await supabase.from("evaluation").select("*").eq("id", id).single();
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    throw error;
+  }
+  return data as Evaluation;
 }

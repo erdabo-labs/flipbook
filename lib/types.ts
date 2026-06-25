@@ -108,6 +108,28 @@ export interface SummaryStats {
   pending_value: number;
 }
 
+export type EvaluationKind = "listing" | "offer";
+
+export interface Evaluation {
+  id: number;
+  kind: EvaluationKind;
+  title: string;
+  listing_url: string | null;
+  price: number;
+  description: string | null;
+  item_id: number | null;
+  score: number;
+  verdict: string;
+  estimated_resale_low: number;
+  estimated_resale_high: number;
+  reasoning: string;
+  red_flags: string[];
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+  created_at: string;
+}
+
 export const SOURCES = [
   "FB Marketplace",
   "KSL",

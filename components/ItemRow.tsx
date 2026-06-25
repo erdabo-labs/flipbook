@@ -533,6 +533,10 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                   {isActionable && (
                     <>
                       <SheetAction
+                        label="Evaluate an offer"
+                        onClick={() => router.push(`/evaluate?item_id=${item.id}&kind=offer`)}
+                      />
+                      <SheetAction
                         label={item.status === "pending" ? "Complete sale" : "Mark sold"}
                         onClick={goSell}
                         disabled={working}

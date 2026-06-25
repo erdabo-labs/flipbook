@@ -8,7 +8,7 @@ const ITEMS = [
   { href: "/", label: "Home", icon: "home" },
   { href: "/acquisitions", label: "Deals", icon: "list" },
   { href: "/inventory", label: "Stock", icon: "box" },
-  { href: "/metrics", label: "Metrics", icon: "chart" },
+  { href: "/evaluations", label: "Evals", icon: "spark" },
 ];
 
 function Icon({ name }: { name: string }) {
@@ -38,10 +38,10 @@ function Icon({ name }: { name: string }) {
           <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
       );
-    case "chart":
+    case "spark":
       return (
         <svg className={common} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M4 20V10m6 10V4m6 16v-7" />
+          <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6L12 3z" />
         </svg>
       );
     default:

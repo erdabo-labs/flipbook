@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   getSummaryStats,
@@ -44,9 +45,15 @@ export default function DashboardPage() {
           </svg>
           <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">Flipbook</h1>
         </div>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ECFDF5] text-sm font-bold text-[#047857]">
-          F
-        </div>
+        <Link
+          href="/metrics"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ECFDF5] text-[#047857]"
+          aria-label="Metrics"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M4 20V10m6 10V4m6 16v-7" />
+          </svg>
+        </Link>
       </div>
 
       {loading && <LoadingState />}
