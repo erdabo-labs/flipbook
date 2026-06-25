@@ -139,6 +139,13 @@ export function BottomNav() {
               </button>
               <button
                 type="button"
+                onClick={() => go("/evaluate")}
+                className="flex min-h-12 items-center rounded-[12px] px-3 text-left text-base font-medium text-[#1A1A17] active:bg-[#F4F2EC]"
+              >
+                Evaluate a deal
+              </button>
+              <button
+                type="button"
                 onClick={closeSheet}
                 className="flex min-h-12 items-center rounded-[12px] px-3 text-left text-base text-[#8C887D] active:bg-[#F4F2EC]"
               >
