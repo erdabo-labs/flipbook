@@ -42,7 +42,7 @@ function ResultCard({ result }: { result: Evaluation }) {
       {result.suggested_offer != null && (
         <div className="mt-3 rounded-[10px] bg-[#ECFDF5] p-3">
           <p className="text-sm font-semibold text-[#047857]">
-            🤖 Flippy suggests {result.kind === "grade" ? "listing it at" : "offering"}{" "}
+            🤖 Flippy suggests {result.kind === "grade" || result.kind === "grade_deal" ? "listing it at" : "offering"}{" "}
             {formatCurrency(result.suggested_offer)}
           </p>
           {result.suggested_message && (
@@ -70,8 +70,11 @@ function EvaluateForm() {
   const searchParams = useSearchParams();
   const initialKind = searchParams.get("kind");
   const [kind, setKind] = useState<EvaluationKind>(
-    initialKind === "offer" || initialKind === "grade" || initialKind === "sale" ? initialKind : "listing"
+    initialKind === "offer" || initialKind === "grade" || initialKind === "grade_deal" || initialKind === "sale"
+      ? initialKind
+      : "listing"
   );
+  const acquisitionId = searchParams.get("acquisition_id") ?? "";
   const [title, setTitle] = useState("");
   const [listingUrl, setListingUrl] = useState("");
   const [price, setPrice] = useState("");
@@ -98,6 +101,13 @@ function EvaluateForm() {
       getInventoryItems().then(setItems).catch((e) => setError(e.message));
     }
   }, [kind, items.length]);
+
+  useEffect(() => {
+    if (kind !== "grade_deal") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prefill from URL on mount
+    setTitle(searchParams.get("title") ?? "");
+    setPrice(searchParams.get("price") ?? "");
+  }, [kind, searchParams]);
 
   useEffect(() => {
     if (kind !== "sale") return;
@@ -172,6 +182,7 @@ function EvaluateForm() {
           description: description.trim(),
           notes: notes.trim(),
           item_id: kind === "offer" || kind === "grade" ? Number(itemId) : null,
+          acquisition_id: kind === "grade_deal" && acquisitionId ? Number(acquisitionId) : null,
           previous_evaluation_id: reEvaluateId ? Number(reEvaluateId) : null,
           sale_cost_basis: saleCtx?.cost_basis ? parseFloat(saleCtx.cost_basis) : null,
           sale_category: saleCtx?.category || null,
@@ -199,12 +210,18 @@ function EvaluateForm() {
           Cancel
         </button>
         <h1 className="text-[14px] font-bold">
-          {reEvaluateId ? "Re-evaluate with Flippy" : kind === "sale" ? "Grade this sale" : "Ask Flippy"}
+          {reEvaluateId
+            ? "Re-evaluate with Flippy"
+            : kind === "sale"
+              ? "Grade this sale"
+              : kind === "grade_deal"
+                ? "Grade this deal"
+                : "Ask Flippy"}
         </h1>
         <span className="w-12" />
       </div>
 
-      {kind !== "sale" && (
+      {kind !== "sale" && kind !== "grade_deal" && (
         <div className="mb-4 flex flex-wrap gap-2">
           <button
             type="button"
@@ -323,6 +340,14 @@ function EvaluateForm() {
               placeholder="Anything else worth knowing — repairs done, accessories included, etc."
             />
           </>
+        ) : kind === "grade_deal" ? (
+          <div className="rounded-[14px] border border-[#ECEAE3] bg-white p-4">
+            <p className="font-medium text-[#1A1A17]">{title}</p>
+            <p className="mt-1 text-sm text-[#8C887D]">
+              Total cost {formatCurrency(parseFloat(price) || 0)} — Flippy will look at every item in this deal
+              and grade it as a whole.
+            </p>
+          </div>
         ) : (
           <div className="rounded-[14px] border border-[#ECEAE3] bg-white p-4">
             <p className="font-medium text-[#1A1A17]">{title}</p>

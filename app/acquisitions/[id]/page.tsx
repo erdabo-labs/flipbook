@@ -286,6 +286,17 @@ export default function AcquisitionDetailPage() {
             <Badge className="mt-2">{acquisition.deal_group}</Badge>
           )}
           {acquisition.notes && <p className="mt-2 text-sm text-[#8C887D]">{acquisition.notes}</p>}
+          <Link
+            href={`/evaluate?${new URLSearchParams({
+              kind: "grade_deal",
+              acquisition_id: String(acquisition.id),
+              title: acquisition.description,
+              price: String(acquisition.total_cost),
+            }).toString()}`}
+            className="mt-2 inline-block text-sm font-medium text-[#047857] underline"
+          >
+            🤖 Ask Flippy to grade this deal
+          </Link>
         </div>
       )}
 

@@ -108,7 +108,7 @@ export interface SummaryStats {
   pending_value: number;
 }
 
-export type EvaluationKind = "listing" | "offer" | "grade" | "sale";
+export type EvaluationKind = "listing" | "offer" | "grade" | "grade_deal" | "sale";
 
 export interface Evaluation {
   id: number;

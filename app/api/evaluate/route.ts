@@ -18,12 +18,12 @@ interface EvaluateResult {
   suggested_message: string | null;
 }
 
-const VALID_KINDS: EvaluationKind[] = ["listing", "offer", "grade", "sale"];
+const VALID_KINDS: EvaluationKind[] = ["listing", "offer", "grade", "grade_deal", "sale"];
 
 export async function POST(request: Request) {
   const body = await request.json();
   const kind: EvaluationKind = VALID_KINDS.includes(body.kind) ? body.kind : "listing";
-  const { title, price, description, notes, listing_url, item_id, previous_evaluation_id } = body;
+  const { title, price, description, notes, listing_url, item_id, acquisition_id, previous_evaluation_id } = body;
 
   if (!title || typeof price !== "number") {
     return NextResponse.json({ error: "Title and price are required" }, { status: 400 });
@@ -53,6 +53,34 @@ export async function POST(request: Request) {
         `Cost basis (what they paid): $${item.cost_basis}\nCurrent status: ${item.listed_price != null ? `listed at $${item.listed_price}` : item.pending_price != null ? `pending sale at $${item.pending_price}` : "not yet listed"}\n` +
         (acquisition ? `Acquired: ${acquisition.acquired_date} (${acquisition.description})\n` : "");
     }
+  }
+
+  let dealContext = "";
+  if (kind === "grade_deal" && acquisition_id) {
+    const [{ data: acquisition, error: acqError }, { data: pnl, error: pnlError }, { data: items, error: itemsError }] =
+      await Promise.all([
+        supabase.from("acquisition").select("*").eq("id", acquisition_id).single(),
+        supabase.from("acquisition_pnl").select("*").eq("id", acquisition_id).single(),
+        supabase.from("item").select("name, cost_basis, category, condition, status, listed_price, pending_price").eq("acquisition_id", acquisition_id),
+      ]);
+    if (acqError || pnlError || itemsError) {
+      return NextResponse.json({ error: "Could not load deal for evaluation" }, { status: 400 });
+    }
+    const itemLines = (items || [])
+      .map(
+        (i) =>
+          `- ${i.name} (${i.category ?? "uncategorized"}, ${i.condition ?? "condition unknown"}): cost $${i.cost_basis}, status ${i.status}` +
+          (i.listed_price != null ? `, listed at $${i.listed_price}` : "") +
+          (i.pending_price != null ? `, pending sale at $${i.pending_price}` : "")
+      )
+      .join("\n");
+    dealContext =
+      `\n\nThis deal has already been made — you're grading the deal as a whole, not deciding whether to buy:\n` +
+      `Description: ${acquisition.description}\nAcquired: ${acquisition.acquired_date}\nSource: ${acquisition.source ?? "unknown"}\n` +
+      `Total cost: $${acquisition.total_cost}\nCash received so far: $${pnl.cash_received}\nRealized P&L so far: $${pnl.realized_pnl}\n` +
+      `Items still in inventory: ${pnl.items_in_inventory} of ${pnl.total_items}\n` +
+      `Items in this deal:\n${itemLines || "(none logged)"}\n` +
+      (acquisition.notes ? `User's notes on the deal: ${acquisition.notes}\n` : "");
   }
 
   let saleContext = "";
@@ -117,7 +145,17 @@ export async function POST(request: Request) {
           profileSection +
           " Respond with ONLY a JSON object, no prose, matching this shape: " +
           JSON_SHAPE
-        : kind === "sale"
+        : kind === "grade_deal"
+          ? personality +
+            "You're grading an entire deal (a batch/lot the user already bought, possibly with multiple items) — don't evaluate whether to buy it, that's done. " +
+            "Assess in hindsight whether the deal as a whole was good: total cost vs. combined resale value of all items (use web search for comps on the items still unsold), " +
+            "factor in any cash already received and realized P&L. Call out any items still sitting in inventory that should be prioritized. " +
+            "suggested_offer here means a single overall price recommendation if there's one unsold item left worth highlighting, otherwise null; suggested_message is an optional one-line tip on what to do next (e.g. which item to list first), or null. " +
+            "score 1-10 reflects how good the deal was overall (10 = steal). " +
+            profileSection +
+            " Respond with ONLY a JSON object, no prose, matching this shape: " +
+            JSON_SHAPE
+          : kind === "sale"
           ? personality +
             "You're grading a sale that has ALREADY happened — there's nothing left to decide, you're just giving the user feedback in hindsight. " +
             "Use web search for comps to judge whether the sale price was fair given the item, condition, and platform. Factor in cost basis (was it profitable) and how long they held it if known. " +
@@ -144,9 +182,11 @@ export async function POST(request: Request) {
       ? `Offer: $${price}\nOffer details: ${description || "(none provided)"}${itemContext}${notesSection}`
       : kind === "grade"
         ? `Item: ${title}\nCost basis: $${price}\nAdditional context: ${description || "(none provided)"}${itemContext}${notesSection}`
-        : kind === "sale"
-          ? `Item: ${title}\nSold for: $${price}${saleContext}${notesSection}`
-          : `Title: ${title}\nAsking price: $${price}\nDescription: ${description || "(none provided)"}${notesSection}`;
+        : kind === "grade_deal"
+          ? `Deal: ${title}\nTotal cost: $${price}${dealContext}${notesSection}`
+          : kind === "sale"
+            ? `Item: ${title}\nSold for: $${price}${saleContext}${notesSection}`
+            : `Title: ${title}\nAsking price: $${price}\nDescription: ${description || "(none provided)"}${notesSection}`;
 
   const openai = new OpenAI();
   const response = await openai.responses.create({
