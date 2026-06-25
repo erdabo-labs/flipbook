@@ -537,6 +537,10 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
                         onClick={() => router.push(`/evaluate?item_id=${item.id}&kind=offer`)}
                       />
                       <SheetAction
+                        label="🤖 Ask Flippy to grade & price it"
+                        onClick={() => router.push(`/evaluate?item_id=${item.id}&kind=grade`)}
+                      />
+                      <SheetAction
                         label={item.status === "pending" ? "Complete sale" : "Mark sold"}
                         onClick={goSell}
                         disabled={working}

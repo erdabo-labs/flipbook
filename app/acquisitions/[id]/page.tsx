@@ -406,23 +406,48 @@ export default function AcquisitionDetailPage() {
                   </button>
                 </div>
               ) : (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => startEditTx(t)}
-                  className="rounded-[14px] border border-[#ECEAE3] bg-white p-3 text-left active:bg-[#FAF9F6]"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium capitalize">{t.type.replace("_", " ")}</span>
-                    <span className={`font-mono text-sm font-semibold ${pnlColorClass(t.cash_amount)}`}>
-                      {formatPnl(t.cash_amount)}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-[#8C887D]">{formatDate(t.transaction_date)}</p>
-                  <p className="mt-1 text-sm text-[#1A1A17]">
-                    {t.items.map((i) => `${i.direction === "outbound" ? "−" : "+"} ${i.item_name}`).join(", ")}
-                  </p>
-                </button>
+                <div key={t.id} className="rounded-[14px] border border-[#ECEAE3] bg-white p-3">
+                  <button type="button" onClick={() => startEditTx(t)} className="w-full text-left active:bg-[#FAF9F6]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium capitalize">{t.type.replace("_", " ")}</span>
+                      <span className={`font-mono text-sm font-semibold ${pnlColorClass(t.cash_amount)}`}>
+                        {formatPnl(t.cash_amount)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-[#8C887D]">{formatDate(t.transaction_date)}</p>
+                    <p className="mt-1 text-sm text-[#1A1A17]">
+                      {t.items.map((i) => `${i.direction === "outbound" ? "−" : "+"} ${i.item_name}`).join(", ")}
+                    </p>
+                  </button>
+                  {(() => {
+                    if (t.type !== "sale") return null;
+                    const outbound = t.items.filter((i) => i.direction === "outbound");
+                    if (outbound.length !== 1) return null;
+                    const fullItem = items.find((i) => i.id === outbound[0].item_id);
+                    if (!fullItem) return null;
+                    const params = new URLSearchParams({
+                      kind: "sale",
+                      item_id: String(fullItem.id),
+                      item_name: fullItem.name,
+                      category: fullItem.category ?? "",
+                      condition: fullItem.condition ?? "",
+                      cost_basis: String(fullItem.cost_basis),
+                      cash_amount: String(t.cash_amount),
+                      platform: t.platform ?? "",
+                      counterparty: t.counterparty ?? "",
+                      transaction_date: t.transaction_date,
+                      acquired_date: acquisition.acquired_date,
+                    });
+                    return (
+                      <Link
+                        href={`/evaluate?${params.toString()}`}
+                        className="mt-2 inline-block text-sm font-medium text-[#047857] underline"
+                      >
+                        🤖 Ask Flippy to grade this sale
+                      </Link>
+                    );
+                  })()}
+                </div>
               )
             )}
           </div>

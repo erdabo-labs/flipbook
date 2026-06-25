@@ -7,7 +7,7 @@ import { CATEGORIES, CONDITIONS, SOURCES } from "@/lib/types";
 import type { ItemCondition, SourceType } from "@/lib/types";
 import { Input, Select, Textarea, Toggle } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, splitAmount } from "@/lib/format";
 
 interface DealInfo {
   description: string;
@@ -26,12 +26,21 @@ interface DraftItem {
   condition: ItemCondition | "";
   used_personally: boolean;
   notes: string;
+  quantity: string;
 }
 
 const today = new Date().toISOString().slice(0, 10);
 
 function emptyItem(): DraftItem {
-  return { name: "", category: "", cost_basis: "", condition: "", used_personally: false, notes: "" };
+  return {
+    name: "",
+    category: "",
+    cost_basis: "",
+    condition: "",
+    used_personally: false,
+    notes: "",
+    quantity: "1",
+  };
 }
 
 export default function NewAcquisitionPage() {
@@ -116,20 +125,23 @@ export default function NewAcquisitionPage() {
     }
     setSaving(true);
     try {
-      await createItems(
-        items
-          .map((i, idx) => ({ i, cost: idx === 0 ? firstItemCost : parseFloat(i.cost_basis) || 0 }))
-          .filter(({ i }) => i.name.trim())
-          .map(({ i, cost }) => ({
+      const rows = items
+        .map((i, idx) => ({ i, cost: idx === 0 ? firstItemCost : parseFloat(i.cost_basis) || 0 }))
+        .filter(({ i }) => i.name.trim())
+        .flatMap(({ i, cost }) => {
+          const qty = Math.max(1, parseInt(i.quantity, 10) || 1);
+          const shares = qty > 1 ? splitAmount(cost, Array(qty).fill(1)) : [cost];
+          return shares.map((share, share_idx) => ({
             acquisition_id: acquisitionId,
-            name: i.name.trim(),
+            name: qty > 1 ? `${i.name.trim()} (${share_idx + 1}/${qty})` : i.name.trim(),
             category: i.category || null,
-            cost_basis: cost,
+            cost_basis: share,
             condition: i.condition || null,
             used_personally: i.used_personally,
             notes: i.notes.trim() || null,
-          }))
-      );
+          }));
+        });
+      await createItems(rows);
       router.push(`/acquisitions/${acquisitionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -303,6 +315,21 @@ export default function NewAcquisitionPage() {
                 checked={item.used_personally}
                 onChange={(v) => updateItem(idx, { used_personally: v })}
               />
+              <Input
+                label="Quantity (identical units)"
+                type="number"
+                inputMode="numeric"
+                min="1"
+                step="1"
+                value={item.quantity}
+                onChange={(e) => updateItem(idx, { quantity: e.target.value })}
+              />
+              {Math.max(1, parseInt(item.quantity, 10) || 1) > 1 && (
+                <p className="text-xs text-[#8C887D]">
+                  Will create {Math.max(1, parseInt(item.quantity, 10) || 1)} separate items, cost split evenly,
+                  so each can be sold one at a time.
+                </p>
+              )}
               <Textarea
                 label="Notes (optional)"
                 value={item.notes}
