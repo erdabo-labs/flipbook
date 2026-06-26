@@ -13,6 +13,7 @@ import { AcquisitionCard } from "@/components/AcquisitionCard";
 import { LinkButton } from "@/components/ui/Button";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { FlipbookLogo } from "@/components/ui/FlipbookLogo";
+import { FlipbookWordmark } from "@/components/ui/FlipbookWordmark";
 import { formatDate, formatPnl, pnlColorClass } from "@/lib/format";
 import { AUTH_STORAGE_KEY } from "@/app/login/page";
 
@@ -41,7 +42,7 @@ export default function DashboardPage() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FlipbookLogo className="h-6 w-6" />
-          <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">Flipbook</h1>
+          <h1><FlipbookWordmark /></h1>
         </div>
         <Link
           href="/metrics"

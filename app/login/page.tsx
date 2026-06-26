@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { FlipbookLogo } from "@/components/ui/FlipbookLogo";
+import { FlipbookWordmark } from "@/components/ui/FlipbookWordmark";
 
 export const APP_PASSWORD = "flipbook2026";
 export const AUTH_STORAGE_KEY = "flipbook_auth";
@@ -28,7 +29,7 @@ export default function LoginPage() {
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
       <div className="mb-8 flex flex-col items-center text-center">
         <FlipbookLogo className="mb-3 h-10 w-10" />
-        <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">Flipbook</h1>
+        <h1><FlipbookWordmark /></h1>
         <p className="mt-1 text-sm font-medium text-[#047857]">Every flip, on the books.</p>
         <p className="mt-2 text-sm text-[#8C887D]">Enter your passphrase to continue.</p>
       </div>

@@ -10,6 +10,7 @@ import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { FlippyMark } from "@/components/ui/FlippyMark";
 
 function scoreColor(score: number): string {
   if (score >= 7) return "text-[#047857]";
@@ -38,7 +39,10 @@ export default function EvaluationsPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
       <div className="mb-1 flex items-center justify-between">
-        <h1 className="text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">🤖 Flippy</h1>
+        <h1 className="flex items-center gap-2 text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">
+          <FlippyMark className="h-6 w-6" />
+          Flippy
+        </h1>
         <LinkButton href="/evaluate">+ New</LinkButton>
       </div>
       <Link href="/settings" className="mb-5 inline-block text-sm font-medium text-[#8C887D] underline">

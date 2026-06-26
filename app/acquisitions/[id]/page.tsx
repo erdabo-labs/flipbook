@@ -21,6 +21,7 @@ import { Button, LinkButton } from "@/components/ui/Button";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { Badge } from "@/components/ui/Badge";
+import { FlippyMark } from "@/components/ui/FlippyMark";
 
 type RecentTx = Transaction & { items: { item_id: number; item_name: string; direction: string }[] };
 
@@ -293,9 +294,10 @@ export default function AcquisitionDetailPage() {
               title: acquisition.description,
               price: String(acquisition.total_cost),
             }).toString()}`}
-            className="mt-2 inline-block text-sm font-medium text-[#047857] underline"
+            className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#047857] underline"
           >
-            🤖 Ask Flippy to grade this deal
+            <FlippyMark className="h-4 w-4" />
+            Ask Flippy to grade this deal
           </Link>
         </div>
       )}
@@ -452,9 +454,10 @@ export default function AcquisitionDetailPage() {
                     return (
                       <Link
                         href={`/evaluate?${params.toString()}`}
-                        className="mt-2 inline-block text-sm font-medium text-[#047857] underline"
+                        className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#047857] underline"
                       >
-                        🤖 Ask Flippy to grade this sale
+                        <FlippyMark className="h-4 w-4" />
+                        Ask Flippy to grade this sale
                       </Link>
                     );
                   })()}
