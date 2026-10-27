@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthGate } from "@/components/AuthGate";
+import { AppShell } from "@/components/AppShell";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken-grotesk",
@@ -31,7 +31,7 @@ export default function RootLayout({
       className={`${hankenGrotesk.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#FAF9F6] text-[#1A1A17]">
-        <AuthGate>{children}</AuthGate>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

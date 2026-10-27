@@ -1,4 +1,4 @@
-import type { ClosedItemRow } from "./db";
+import type { ClosedItemRow } from "./types";
 
 export interface DealSummary {
   transaction_id: number;

@@ -8,7 +8,7 @@ import {
   getAcquisitionsLite,
   getInventoryItems,
   markItemKept,
-} from "@/lib/db";
+} from "@/lib/db-client";
 import type { Item } from "@/lib/types";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";

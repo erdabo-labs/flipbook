@@ -12,7 +12,7 @@ import {
   getTransactionsForAcquisition,
   updateAcquisition,
   updateTransaction,
-} from "@/lib/db";
+} from "@/lib/db-client";
 import type { Acquisition, AcquisitionPnl, Item, SourceType, Transaction } from "@/lib/types";
 import { SOURCES } from "@/lib/types";
 import { formatCurrency, formatDate, formatPnl, pnlColorClass } from "@/lib/format";

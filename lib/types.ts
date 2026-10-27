@@ -183,3 +183,12 @@ export const CONDITIONS: { value: ItemCondition; label: string }[] = [
   { value: "fair", label: "Fair" },
   { value: "parts", label: "Parts" },
 ];
+
+export interface ClosedItemRow {
+  transaction_id: number;
+  transaction_date: string;
+  cash_amount: number;
+  cost_basis: number;
+  acquired_date: string | null;
+  item_name: string;
+}

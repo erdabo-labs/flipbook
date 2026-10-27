@@ -18,7 +18,7 @@ import {
   undoBundlePending,
   updateItemDetails,
   updateItemStatus,
-} from "@/lib/db";
+} from "@/lib/db-client";
 import { Input, Select, Toggle } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -241,7 +241,7 @@ export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void
     setSplitName1(item.name);
     setSplitCost1(String(Math.round((item.cost_basis / 2) * 100) / 100));
     setSplitName2(item.name);
-    setSplitCost2(String(Math.round((item.cost_basis / 2) * 100) / 100));
+    setSplitCost2(String(Math.round((item.cost_basis - Math.round((item.cost_basis / 2) * 100) / 100) * 100) / 100));
     setError(null);
     setSplitting(true);
   }

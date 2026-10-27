@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getClosedItemRows } from "@/lib/db";
+import { getClosedItemRows } from "@/lib/db-client";
 import { computeAvgDaysToSell, computeMonthlyPnl } from "@/lib/metrics";
 import type { MonthlyPnl } from "@/lib/metrics";
 import { formatPnl, pnlColorClass } from "@/lib/format";

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { deleteEvaluation, getEvaluation, getEvaluationMessages, updateEvaluationNotes } from "@/lib/db";
+import { deleteEvaluation, getEvaluation, getEvaluationMessages, updateEvaluationNotes } from "@/lib/db-client";
 import type { Evaluation, EvaluationMessage } from "@/lib/types";
 import { formatCurrency, formatDate, isValidUrl } from "@/lib/format";
 import { LoadingState } from "@/components/ui/Empty";

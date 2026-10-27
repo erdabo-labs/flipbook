@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { getInventory } from "@/lib/db";
+import { getInventory } from "@/lib/db-client";
 import type { CurrentInventoryRow } from "@/lib/types";
 import { formatCurrency, formatDate, daysSince, saleHref } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/Badge";

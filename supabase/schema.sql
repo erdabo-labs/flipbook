@@ -51,7 +51,7 @@ CREATE TABLE transaction_item (
 CREATE TABLE evaluation (
     id                      BIGSERIAL PRIMARY KEY,
     kind                    TEXT NOT NULL DEFAULT 'listing'
-                            CHECK (kind IN ('listing','offer')),
+                            CHECK (kind IN ('listing','offer','grade','grade_deal','sale')),
     title                   TEXT NOT NULL,
     listing_url             TEXT,
     price                   NUMERIC(10,2) NOT NULL,

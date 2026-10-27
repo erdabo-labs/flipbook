@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getAcquisitionsPnl } from "@/lib/db";
+import { getAcquisitionsPnl } from "@/lib/db-client";
 import type { AcquisitionPnl } from "@/lib/types";
 import { AcquisitionCard } from "@/components/AcquisitionCard";
 import { LinkButton } from "@/components/ui/Button";

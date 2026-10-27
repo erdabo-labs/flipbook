@@ -1,649 +1,175 @@
-import { supabase } from "./supabase";
-import { splitAmount } from "./format";
-import type {
-  Acquisition,
-  AcquisitionPnl,
-  CurrentInventoryRow,
-  Evaluation,
-  EvaluationKind,
-  EvaluationMessage,
-  FlippyProfile,
-  Item,
-  ItemCondition,
-  ItemStatus,
-  SourceType,
-  SummaryStats,
-  Transaction,
-  TransactionItem,
-  TransactionType,
-} from "./types";
+import "server-only";
+import { getPool, inTransaction } from "./server/postgres";
+import { Repository } from "./server/repository";
+import { operationArgs, evaluation } from "./server/validation";
+export type { ClosedItemRow } from "./types";
 
-interface TransactionItemWithName {
-  transaction_id: number;
-  item_id: number;
-  direction: string;
-  item: { name: string } | null;
+export async function getSummaryStats(...args: Parameters<Repository['getSummaryStats']>): Promise<Awaited<ReturnType<Repository['getSummaryStats']>>> {
+ operationArgs.getSummaryStats.parse(args);
+ return new Repository(getPool()).getSummaryStats(...args);
+}
+export async function getAcquisitionsPnl(...args: Parameters<Repository['getAcquisitionsPnl']>): Promise<Awaited<ReturnType<Repository['getAcquisitionsPnl']>>> {
+ operationArgs.getAcquisitionsPnl.parse(args);
+ return new Repository(getPool()).getAcquisitionsPnl(...args);
+}
+export async function getActiveAcquisitions(...args: Parameters<Repository['getActiveAcquisitions']>): Promise<Awaited<ReturnType<Repository['getActiveAcquisitions']>>> {
+ operationArgs.getActiveAcquisitions.parse(args);
+ return new Repository(getPool()).getActiveAcquisitions(...args);
+}
+export async function getRecentTransactions(...args: Parameters<Repository['getRecentTransactions']>): Promise<Awaited<ReturnType<Repository['getRecentTransactions']>>> {
+ operationArgs.getRecentTransactions.parse(args);
+ return new Repository(getPool()).getRecentTransactions(...args);
+}
+export async function createAcquisition(...args: Parameters<Repository['createAcquisition']>): Promise<Awaited<ReturnType<Repository['createAcquisition']>>> {
+ operationArgs.createAcquisition.parse(args);
+ return inTransaction(client => new Repository(client).createAcquisition(...args));
+}
+export async function createItems(...args: Parameters<Repository['createItems']>): Promise<Awaited<ReturnType<Repository['createItems']>>> {
+ operationArgs.createItems.parse(args);
+ return inTransaction(client => new Repository(client).createItems(...args));
+}
+export async function updateAcquisition(...args: Parameters<Repository['updateAcquisition']>): Promise<Awaited<ReturnType<Repository['updateAcquisition']>>> {
+ operationArgs.updateAcquisition.parse(args);
+ return inTransaction(client => new Repository(client).updateAcquisition(...args));
+}
+export async function splitItem(...args: Parameters<Repository['splitItem']>): Promise<Awaited<ReturnType<Repository['splitItem']>>> {
+ operationArgs.splitItem.parse(args);
+ return inTransaction(client => new Repository(client).splitItem(...args));
+}
+export async function getAcquisition(...args: Parameters<Repository['getAcquisition']>): Promise<Awaited<ReturnType<Repository['getAcquisition']>>> {
+ operationArgs.getAcquisition.parse(args);
+ return new Repository(getPool()).getAcquisition(...args);
+}
+export async function getAcquisitionPnl(...args: Parameters<Repository['getAcquisitionPnl']>): Promise<Awaited<ReturnType<Repository['getAcquisitionPnl']>>> {
+ operationArgs.getAcquisitionPnl.parse(args);
+ return new Repository(getPool()).getAcquisitionPnl(...args);
+}
+export async function getItemsForAcquisition(...args: Parameters<Repository['getItemsForAcquisition']>): Promise<Awaited<ReturnType<Repository['getItemsForAcquisition']>>> {
+ operationArgs.getItemsForAcquisition.parse(args);
+ return new Repository(getPool()).getItemsForAcquisition(...args);
+}
+export async function getTransactionsForAcquisition(...args: Parameters<Repository['getTransactionsForAcquisition']>): Promise<Awaited<ReturnType<Repository['getTransactionsForAcquisition']>>> {
+ operationArgs.getTransactionsForAcquisition.parse(args);
+ return new Repository(getPool()).getTransactionsForAcquisition(...args);
+}
+export async function updateItemStatus(...args: Parameters<Repository['updateItemStatus']>): Promise<Awaited<ReturnType<Repository['updateItemStatus']>>> {
+ operationArgs.updateItemStatus.parse(args);
+ return inTransaction(client => new Repository(client).updateItemStatus(...args));
+}
+export async function markItemListed(...args: Parameters<Repository['markItemListed']>): Promise<Awaited<ReturnType<Repository['markItemListed']>>> {
+ operationArgs.markItemListed.parse(args);
+ return inTransaction(client => new Repository(client).markItemListed(...args));
+}
+export async function markItemPending(...args: Parameters<Repository['markItemPending']>): Promise<Awaited<ReturnType<Repository['markItemPending']>>> {
+ operationArgs.markItemPending.parse(args);
+ return inTransaction(client => new Repository(client).markItemPending(...args));
+}
+export async function createBundleListing(...args: Parameters<Repository['createBundleListing']>): Promise<Awaited<ReturnType<Repository['createBundleListing']>>> {
+ operationArgs.createBundleListing.parse(args);
+ return inTransaction(client => new Repository(client).createBundleListing(...args));
+}
+export async function getBundleMembers(...args: Parameters<Repository['getBundleMembers']>): Promise<Awaited<ReturnType<Repository['getBundleMembers']>>> {
+ operationArgs.getBundleMembers.parse(args);
+ return new Repository(getPool()).getBundleMembers(...args);
+}
+export async function setBundlePending(...args: Parameters<Repository['setBundlePending']>): Promise<Awaited<ReturnType<Repository['setBundlePending']>>> {
+ operationArgs.setBundlePending.parse(args);
+ return inTransaction(client => new Repository(client).setBundlePending(...args));
+}
+export async function undoBundlePending(...args: Parameters<Repository['undoBundlePending']>): Promise<Awaited<ReturnType<Repository['undoBundlePending']>>> {
+ operationArgs.undoBundlePending.parse(args);
+ return inTransaction(client => new Repository(client).undoBundlePending(...args));
+}
+export async function removeFromBundle(...args: Parameters<Repository['removeFromBundle']>): Promise<Awaited<ReturnType<Repository['removeFromBundle']>>> {
+ operationArgs.removeFromBundle.parse(args);
+ return inTransaction(client => new Repository(client).removeFromBundle(...args));
+}
+export async function getInventory(...args: Parameters<Repository['getInventory']>): Promise<Awaited<ReturnType<Repository['getInventory']>>> {
+ operationArgs.getInventory.parse(args);
+ return new Repository(getPool()).getInventory(...args);
+}
+export async function getInventoryItems(...args: Parameters<Repository['getInventoryItems']>): Promise<Awaited<ReturnType<Repository['getInventoryItems']>>> {
+ operationArgs.getInventoryItems.parse(args);
+ return new Repository(getPool()).getInventoryItems(...args);
+}
+export async function getAcquisitionsLite(...args: Parameters<Repository['getAcquisitionsLite']>): Promise<Awaited<ReturnType<Repository['getAcquisitionsLite']>>> {
+ operationArgs.getAcquisitionsLite.parse(args);
+ return new Repository(getPool()).getAcquisitionsLite(...args);
+}
+export async function createSaleOrBundleTransaction(...args: Parameters<Repository['createSaleOrBundleTransaction']>): Promise<Awaited<ReturnType<Repository['createSaleOrBundleTransaction']>>> {
+ operationArgs.createSaleOrBundleTransaction.parse(args);
+ return inTransaction(client => new Repository(client).createSaleOrBundleTransaction(...args));
+}
+export async function createTradeTransaction(...args: Parameters<Repository['createTradeTransaction']>): Promise<Awaited<ReturnType<Repository['createTradeTransaction']>>> {
+ operationArgs.createTradeTransaction.parse(args);
+ return inTransaction(client => new Repository(client).createTradeTransaction(...args));
+}
+export async function markItemKept(...args: Parameters<Repository['markItemKept']>): Promise<Awaited<ReturnType<Repository['markItemKept']>>> {
+ operationArgs.markItemKept.parse(args);
+ return inTransaction(client => new Repository(client).markItemKept(...args));
+}
+export async function updateTransaction(...args: Parameters<Repository['updateTransaction']>): Promise<Awaited<ReturnType<Repository['updateTransaction']>>> {
+ operationArgs.updateTransaction.parse(args);
+ return inTransaction(client => new Repository(client).updateTransaction(...args));
+}
+export async function deleteTransaction(...args: Parameters<Repository['deleteTransaction']>): Promise<Awaited<ReturnType<Repository['deleteTransaction']>>> {
+ operationArgs.deleteTransaction.parse(args);
+ return inTransaction(client => new Repository(client).deleteTransaction(...args));
+}
+export async function getClosedItemRows(...args: Parameters<Repository['getClosedItemRows']>): Promise<Awaited<ReturnType<Repository['getClosedItemRows']>>> {
+ operationArgs.getClosedItemRows.parse(args);
+ return new Repository(getPool()).getClosedItemRows(...args);
+}
+export async function updateItemDetails(...args: Parameters<Repository['updateItemDetails']>): Promise<Awaited<ReturnType<Repository['updateItemDetails']>>> {
+ operationArgs.updateItemDetails.parse(args);
+ return inTransaction(client => new Repository(client).updateItemDetails(...args));
+}
+export async function getEvaluations(...args: Parameters<Repository['getEvaluations']>): Promise<Awaited<ReturnType<Repository['getEvaluations']>>> {
+ operationArgs.getEvaluations.parse(args);
+ return new Repository(getPool()).getEvaluations(...args);
+}
+export async function getEvaluation(...args: Parameters<Repository['getEvaluation']>): Promise<Awaited<ReturnType<Repository['getEvaluation']>>> {
+ operationArgs.getEvaluation.parse(args);
+ return new Repository(getPool()).getEvaluation(...args);
+}
+export async function updateEvaluationNotes(...args: Parameters<Repository['updateEvaluationNotes']>): Promise<Awaited<ReturnType<Repository['updateEvaluationNotes']>>> {
+ operationArgs.updateEvaluationNotes.parse(args);
+ return inTransaction(client => new Repository(client).updateEvaluationNotes(...args));
+}
+export async function deleteEvaluation(...args: Parameters<Repository['deleteEvaluation']>): Promise<Awaited<ReturnType<Repository['deleteEvaluation']>>> {
+ operationArgs.deleteEvaluation.parse(args);
+ return inTransaction(client => new Repository(client).deleteEvaluation(...args));
+}
+export async function getEvaluationMessages(...args: Parameters<Repository['getEvaluationMessages']>): Promise<Awaited<ReturnType<Repository['getEvaluationMessages']>>> {
+ operationArgs.getEvaluationMessages.parse(args);
+ return new Repository(getPool()).getEvaluationMessages(...args);
+}
+export async function getFlippyProfile(...args: Parameters<Repository['getFlippyProfile']>): Promise<Awaited<ReturnType<Repository['getFlippyProfile']>>> {
+ operationArgs.getFlippyProfile.parse(args);
+ return new Repository(getPool()).getFlippyProfile(...args);
+}
+export async function saveFlippyProfile(...args: Parameters<Repository['saveFlippyProfile']>): Promise<Awaited<ReturnType<Repository['saveFlippyProfile']>>> {
+ operationArgs.saveFlippyProfile.parse(args);
+ return inTransaction(client => new Repository(client).saveFlippyProfile(...args));
+}
+export async function deleteAcquisition(...args: Parameters<Repository['deleteAcquisition']>): Promise<Awaited<ReturnType<Repository['deleteAcquisition']>>> {
+ operationArgs.deleteAcquisition.parse(args);
+ return inTransaction(client => new Repository(client).deleteAcquisition(...args));
 }
 
-export async function getSummaryStats(): Promise<SummaryStats> {
-  const { data, error } = await supabase
-    .from("summary_stats")
-    .select("*")
-    .single();
-  if (error) throw error;
-  return data as SummaryStats;
+export async function createEvaluation(...args: Parameters<Repository["createEvaluation"]>) {
+ const input = evaluation.parse(args[0]);
+ return inTransaction(client => new Repository(client).createEvaluation(input));
+}
+export async function saveChat(...args: Parameters<Repository["saveChat"]>) {
+ return inTransaction(client => new Repository(client).saveChat(...args));
 }
 
-export async function getAcquisitionsPnl(): Promise<AcquisitionPnl[]> {
-  const { data, error } = await supabase
-    .from("acquisition_pnl")
-    .select("*")
-    .order("acquired_date", { ascending: false });
-  if (error) throw error;
-  return data as AcquisitionPnl[];
+export async function getItem(id: number) {
+ return new Repository(getPool()).getItem(id);
 }
 
-export async function getActiveAcquisitions(): Promise<AcquisitionPnl[]> {
-  const all = await getAcquisitionsPnl();
-  return all.filter((a) => a.items_in_inventory > 0);
-}
-
-export async function getRecentTransactions(limitCount = 5): Promise<
-  (Transaction & { items: { item_id: number; item_name: string; direction: string }[] })[]
-> {
-  const { data: transactions, error } = await supabase
-    .from("transaction")
-    .select("*")
-    .order("transaction_date", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(limitCount);
-  if (error) throw error;
-  if (!transactions || transactions.length === 0) return [];
-
-  const ids = transactions.map((t) => t.id);
-  const { data: tis, error: tiError } = await supabase
-    .from("transaction_item")
-    .select("transaction_id, item_id, direction, item(name)")
-    .in("transaction_id", ids);
-  if (tiError) throw tiError;
-
-  const typedTis = (tis || []) as unknown as TransactionItemWithName[];
-
-  return transactions.map((t) => ({
-    ...t,
-    items: typedTis
-      .filter((ti) => ti.transaction_id === t.id)
-      .map((ti) => ({
-        item_id: ti.item_id,
-        item_name: ti.item?.name ?? "Unknown item",
-        direction: ti.direction,
-      })),
-  }));
-}
-
-export async function createAcquisition(input: {
-  description: string;
-  acquired_date: string;
-  total_cost: number;
-  source: string | null;
-  source_type: SourceType;
-  deal_group: string | null;
-  notes: string | null;
-}): Promise<Acquisition> {
-  const { data, error } = await supabase
-    .from("acquisition")
-    .insert(input)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as Acquisition;
-}
-
-export async function createItems(
-  items: {
-    acquisition_id: number;
-    name: string;
-    category: string | null;
-    cost_basis: number;
-    condition: ItemCondition | null;
-    used_personally: boolean;
-    notes: string | null;
-  }[]
-): Promise<Item[]> {
-  if (items.length === 0) return [];
-  const { data, error } = await supabase.from("item").insert(items).select();
-  if (error) throw error;
-  return data as Item[];
-}
-
-export async function updateAcquisition(
-  id: number,
-  input: {
-    description: string;
-    acquired_date: string;
-    total_cost: number;
-    source: string | null;
-    source_type: SourceType;
-    deal_group: string | null;
-    notes: string | null;
-  }
-): Promise<void> {
-  const { error } = await supabase.from("acquisition").update(input).eq("id", id);
-  if (error) throw error;
-}
-
-export async function splitItem(
-  item: Item,
-  parts: { name: string; cost_basis: number }[]
-): Promise<void> {
-  const { error: insertError } = await supabase.from("item").insert(
-    parts.map((p) => ({
-      acquisition_id: item.acquisition_id,
-      name: p.name,
-      category: item.category,
-      cost_basis: p.cost_basis,
-      condition: item.condition,
-      used_personally: item.used_personally,
-      notes: item.notes,
-    }))
-  );
-  if (insertError) throw insertError;
-
-  const { error: deleteError } = await supabase.from("item").delete().eq("id", item.id);
-  if (deleteError) throw deleteError;
-}
-
-export async function getAcquisition(id: number): Promise<Acquisition | null> {
-  const { data, error } = await supabase
-    .from("acquisition")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    throw error;
-  }
-  return data as Acquisition;
-}
-
-export async function getAcquisitionPnl(id: number): Promise<AcquisitionPnl | null> {
-  const { data, error } = await supabase
-    .from("acquisition_pnl")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    throw error;
-  }
-  return data as AcquisitionPnl;
-}
-
-export async function getItemsForAcquisition(acquisitionId: number): Promise<Item[]> {
-  const { data, error } = await supabase
-    .from("item")
-    .select("*")
-    .eq("acquisition_id", acquisitionId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return data as Item[];
-}
-
-export async function getTransactionsForAcquisition(
-  acquisitionId: number
-): Promise<
-  (Transaction & { items: { item_id: number; item_name: string; direction: string }[] })[]
-> {
-  const items = await getItemsForAcquisition(acquisitionId);
-  const itemIds = items.map((i) => i.id);
-  if (itemIds.length === 0) return [];
-
-  const { data: tis, error: tiError } = await supabase
-    .from("transaction_item")
-    .select("transaction_id, item_id, direction, item(name)")
-    .in("item_id", itemIds);
-  if (tiError) throw tiError;
-  if (!tis || tis.length === 0) return [];
-
-  const typedTis = tis as unknown as TransactionItemWithName[];
-  const txIds = Array.from(new Set(typedTis.map((ti) => ti.transaction_id)));
-
-  const { data: transactions, error } = await supabase
-    .from("transaction")
-    .select("*")
-    .in("id", txIds)
-    .order("transaction_date", { ascending: false });
-  if (error) throw error;
-
-  return (transactions || []).map((t) => ({
-    ...t,
-    items: typedTis
-      .filter((ti) => ti.transaction_id === t.id)
-      .map((ti) => ({
-        item_id: ti.item_id,
-        item_name: ti.item?.name ?? "Unknown item",
-        direction: ti.direction,
-      })),
-  }));
-}
-
-export async function updateItemStatus(
-  itemId: number,
-  status: ItemStatus,
-  notes?: string | null
-): Promise<void> {
-  const update: { status: ItemStatus; notes?: string | null } = { status };
-  if (notes !== undefined) update.notes = notes;
-  const { error } = await supabase.from("item").update(update).eq("id", itemId);
-  if (error) throw error;
-}
-
-export async function markItemListed(itemId: number, listed_price: number | null): Promise<void> {
-  const { error } = await supabase.from("item").update({ status: "listed", listed_price }).eq("id", itemId);
-  if (error) throw error;
-}
-
-export async function markItemPending(itemId: number, pending_price: number | null): Promise<void> {
-  const { error } = await supabase.from("item").update({ status: "pending", pending_price }).eq("id", itemId);
-  if (error) throw error;
-}
-
-export async function createBundleListing(input: {
-  items: { id: number; cost_basis: number }[];
-  label: string | null;
-  total_listed_price: number | null;
-}): Promise<string> {
-  const bundleId = crypto.randomUUID();
-  const shares =
-    input.total_listed_price != null
-      ? splitAmount(input.total_listed_price, input.items.map((i) => i.cost_basis))
-      : input.items.map(() => null);
-
-  for (let i = 0; i < input.items.length; i++) {
-    const { error } = await supabase
-      .from("item")
-      .update({
-        bundle_id: bundleId,
-        bundle_label: input.label,
-        status: "listed",
-        listed_price: shares[i],
-      })
-      .eq("id", input.items[i].id);
-    if (error) throw error;
-  }
-  return bundleId;
-}
-
-export async function getBundleMembers(bundleId: string): Promise<Item[]> {
-  const { data, error } = await supabase.from("item").select("*").eq("bundle_id", bundleId);
-  if (error) throw error;
-  return data as Item[];
-}
-
-export async function setBundlePending(bundleId: string, total_pending_price: number | null): Promise<void> {
-  const members = await getBundleMembers(bundleId);
-  const shares =
-    total_pending_price != null
-      ? splitAmount(total_pending_price, members.map((m) => m.cost_basis))
-      : members.map(() => null);
-
-  for (let i = 0; i < members.length; i++) {
-    const { error } = await supabase
-      .from("item")
-      .update({ status: "pending", pending_price: shares[i] })
-      .eq("id", members[i].id);
-    if (error) throw error;
-  }
-}
-
-export async function undoBundlePending(bundleId: string): Promise<void> {
-  const { error } = await supabase.from("item").update({ status: "listed" }).eq("bundle_id", bundleId);
-  if (error) throw error;
-}
-
-export async function removeFromBundle(itemId: number): Promise<void> {
-  const { error } = await supabase.from("item").update({ bundle_id: null, bundle_label: null }).eq("id", itemId);
-  if (error) throw error;
-}
-
-export async function getInventory(): Promise<CurrentInventoryRow[]> {
-  const { data, error } = await supabase
-    .from("current_inventory")
-    .select("*")
-    .order("acquired_date", { ascending: false });
-  if (error) throw error;
-  return data as CurrentInventoryRow[];
-}
-
-export async function getInventoryItems(acquisitionId?: number): Promise<Item[]> {
-  let query = supabase
-    .from("item")
-    .select("*")
-    .in("status", ["inventory", "listed", "pending"])
-    .order("created_at", { ascending: true });
-  if (acquisitionId) {
-    query = query.eq("acquisition_id", acquisitionId);
-  }
-  const { data, error } = await query;
-  if (error) throw error;
-  return data as Item[];
-}
-
-export async function getAcquisitionsLite(): Promise<
-  { id: number; description: string; acquired_date: string }[]
-> {
-  const { data, error } = await supabase
-    .from("acquisition")
-    .select("id, description, acquired_date")
-    .order("acquired_date", { ascending: false });
-  if (error) throw error;
-  return data || [];
-}
-
-export async function createSaleOrBundleTransaction(input: {
-  itemIds: number[];
-  cash_amount: number;
-  transaction_date: string;
-  platform: string | null;
-  counterparty: string | null;
-  notes: string | null;
-}): Promise<Transaction> {
-  const isBundle = input.itemIds.length > 1;
-
-  const { data: tx, error: txError } = await supabase
-    .from("transaction")
-    .insert({
-      type: "sale",
-      transaction_date: input.transaction_date,
-      cash_amount: input.cash_amount,
-      platform: input.platform,
-      counterparty: input.counterparty,
-      notes: input.notes,
-    })
-    .select()
-    .single();
-  if (txError) throw txError;
-
-  const tiRows: Omit<TransactionItem, "id">[] = input.itemIds.map((itemId) => ({
-    transaction_id: tx.id,
-    item_id: itemId,
-    direction: "outbound" as const,
-  }));
-  const { error: tiError } = await supabase.from("transaction_item").insert(tiRows);
-  if (tiError) throw tiError;
-
-  if (isBundle) {
-    const { error: statusError } = await supabase
-      .from("item")
-      .update({ status: "bundled" })
-      .in("id", input.itemIds);
-    if (statusError) throw statusError;
-  }
-  const { error: soldError } = await supabase
-    .from("item")
-    .update({ status: "sold" })
-    .in("id", input.itemIds);
-  if (soldError) throw soldError;
-
-  return tx as Transaction;
-}
-
-export async function createTradeTransaction(input: {
-  outboundItemIds: number[];
-  acquisitionId: number;
-  cash_amount: number;
-  receivedItemName: string;
-  transaction_date: string;
-  platform: string | null;
-  counterparty: string | null;
-  notes: string | null;
-}): Promise<Transaction> {
-  const type: TransactionType = input.cash_amount > 0 ? "partial_trade" : "trade";
-
-  const { data: tx, error: txError } = await supabase
-    .from("transaction")
-    .insert({
-      type,
-      transaction_date: input.transaction_date,
-      cash_amount: input.cash_amount,
-      platform: input.platform,
-      counterparty: input.counterparty,
-      notes: input.notes,
-    })
-    .select()
-    .single();
-  if (txError) throw txError;
-
-  const outboundRows: Omit<TransactionItem, "id">[] = input.outboundItemIds.map(
-    (itemId) => ({
-      transaction_id: tx.id,
-      item_id: itemId,
-      direction: "outbound" as const,
-    })
-  );
-  const { error: outError } = await supabase
-    .from("transaction_item")
-    .insert(outboundRows);
-  if (outError) throw outError;
-
-  const { error: statusError } = await supabase
-    .from("item")
-    .update({ status: "traded" })
-    .in("id", input.outboundItemIds);
-  if (statusError) throw statusError;
-
-  const { data: newItem, error: itemError } = await supabase
-    .from("item")
-    .insert({
-      acquisition_id: input.acquisitionId,
-      name: input.receivedItemName,
-      cost_basis: 0,
-      status: "inventory",
-    })
-    .select()
-    .single();
-  if (itemError) throw itemError;
-
-  const { error: inError } = await supabase.from("transaction_item").insert({
-    transaction_id: tx.id,
-    item_id: newItem.id,
-    direction: "inbound",
-  });
-  if (inError) throw inError;
-
-  return tx as Transaction;
-}
-
-export async function markItemKept(itemId: number, notes?: string | null): Promise<void> {
-  await updateItemStatus(itemId, "kept", notes ?? undefined);
-}
-
-export async function updateTransaction(
-  id: number,
-  input: {
-    transaction_date: string;
-    cash_amount: number;
-    platform: string | null;
-    counterparty: string | null;
-    notes: string | null;
-  }
-): Promise<void> {
-  const { error } = await supabase.from("transaction").update(input).eq("id", id);
-  if (error) throw error;
-}
-
-export async function deleteTransaction(transactionId: number): Promise<void> {
-  const { data: tis, error: tiError } = await supabase
-    .from("transaction_item")
-    .select("item_id, direction")
-    .eq("transaction_id", transactionId);
-  if (tiError) throw tiError;
-
-  const outboundIds = (tis || []).filter((ti) => ti.direction === "outbound").map((ti) => ti.item_id);
-  const inboundIds = (tis || []).filter((ti) => ti.direction === "inbound").map((ti) => ti.item_id);
-
-  if (outboundIds.length > 0) {
-    const { error } = await supabase.from("item").update({ status: "inventory" }).in("id", outboundIds);
-    if (error) throw error;
-  }
-  if (inboundIds.length > 0) {
-    const { error } = await supabase.from("item").delete().in("id", inboundIds);
-    if (error) throw error;
-  }
-
-  const { error: txError } = await supabase.from("transaction").delete().eq("id", transactionId);
-  if (txError) throw txError;
-}
-
-export interface ClosedItemRow {
-  transaction_id: number;
-  transaction_date: string;
-  cash_amount: number;
-  cost_basis: number;
-  acquired_date: string | null;
-  item_name: string;
-}
-
-interface ClosedItemRawRow {
-  transaction_id: number;
-  item: {
-    name: string;
-    cost_basis: number;
-    acquisition: { acquired_date: string } | null;
-  } | null;
-  transaction: { transaction_date: string; cash_amount: number } | null;
-}
-
-export async function getClosedItemRows(): Promise<ClosedItemRow[]> {
-  const { data, error } = await supabase
-    .from("transaction_item")
-    .select(
-      "transaction_id, item:item_id(name, cost_basis, acquisition:acquisition_id(acquired_date)), transaction:transaction_id(transaction_date, cash_amount)"
-    )
-    .eq("direction", "outbound");
-  if (error) throw error;
-
-  return ((data || []) as unknown as ClosedItemRawRow[])
-    .filter((row) => row.transaction)
-    .map((row) => ({
-      transaction_id: row.transaction_id,
-      transaction_date: row.transaction!.transaction_date,
-      cash_amount: row.transaction!.cash_amount,
-      cost_basis: row.item?.cost_basis ?? 0,
-      acquired_date: row.item?.acquisition?.acquired_date ?? null,
-      item_name: row.item?.name ?? "Unknown item",
-    }));
-}
-
-export async function updateItemDetails(
-  itemId: number,
-  input: { name: string; cost_basis: number; category: string | null; condition: ItemCondition | null }
-): Promise<void> {
-  const { error } = await supabase.from("item").update(input).eq("id", itemId);
-  if (error) throw error;
-}
-
-export async function createEvaluation(input: {
-  kind: EvaluationKind;
-  title: string;
-  listing_url: string | null;
-  price: number;
-  description: string | null;
-  notes: string | null;
-  item_id: number | null;
-  score: number;
-  verdict: string;
-  estimated_resale_low: number;
-  estimated_resale_high: number;
-  reasoning: string;
-  red_flags: string[];
-  suggested_offer: number | null;
-  suggested_message: string | null;
-  previous_evaluation_id: number | null;
-  input_tokens: number | null;
-  output_tokens: number | null;
-  cost_usd: number | null;
-}): Promise<Evaluation> {
-  const { data, error } = await supabase.from("evaluation").insert(input).select().single();
-  if (error) throw error;
-  return data as Evaluation;
-}
-
-export async function getEvaluations(): Promise<Evaluation[]> {
-  const { data, error } = await supabase
-    .from("evaluation")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data as Evaluation[];
-}
-
-export async function getEvaluation(id: number): Promise<Evaluation | null> {
-  const { data, error } = await supabase.from("evaluation").select("*").eq("id", id).single();
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    throw error;
-  }
-  return data as Evaluation;
-}
-
-export async function updateEvaluationNotes(id: number, notes: string | null): Promise<Evaluation> {
-  const { data, error } = await supabase.from("evaluation").update({ notes }).eq("id", id).select().single();
-  if (error) throw error;
-  return data as Evaluation;
-}
-
-export async function deleteEvaluation(id: number): Promise<void> {
-  const { error } = await supabase.from("evaluation").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function getEvaluationMessages(evaluationId: number): Promise<EvaluationMessage[]> {
-  const { data, error } = await supabase
-    .from("evaluation_message")
-    .select("*")
-    .eq("evaluation_id", evaluationId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return data as EvaluationMessage[];
-}
-
-export async function getFlippyProfile(): Promise<FlippyProfile | null> {
-  const { data, error } = await supabase.from("flippy_profile").select("*").eq("id", 1).maybeSingle();
-  if (error) throw error;
-  return data as FlippyProfile | null;
-}
-
-export async function saveFlippyProfile(input: {
-  location: string | null;
-  platforms: string | null;
-  ships_items: boolean;
-  style_notes: string | null;
-}): Promise<FlippyProfile> {
-  const { data, error } = await supabase
-    .from("flippy_profile")
-    .upsert({ id: 1, ...input, updated_at: new Date().toISOString() })
-    .select()
-    .single();
-  if (error) throw error;
-  return data as FlippyProfile;
-}
-
-export async function deleteAcquisition(id: number): Promise<void> {
-  const items = await getItemsForAcquisition(id);
-  const itemIds = items.map((i) => i.id);
-  if (itemIds.length > 0) {
-    const { data: tis, error: tiError } = await supabase
-      .from("transaction_item")
-      .select("transaction_id")
-      .in("item_id", itemIds);
-    if (tiError) throw tiError;
-    const txIds = Array.from(new Set((tis || []).map((t) => t.transaction_id)));
-    if (txIds.length > 0) {
-      const { error: txDeleteError } = await supabase.from("transaction").delete().in("id", txIds);
-      if (txDeleteError) throw txDeleteError;
-    }
-  }
-  const { error } = await supabase.from("acquisition").delete().eq("id", id);
-  if (error) throw error;
+export async function createAcquisitionWithItems(...args: Parameters<Repository['createAcquisitionWithItems']>) {
+ operationArgs.createAcquisitionWithItems.parse(args);
+ return inTransaction(client => new Repository(client).createAcquisitionWithItems(...args));
 }

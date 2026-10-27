@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.env*
+*.pem
+*.key
+*.log
+coverage
+.vercel
+.aws
+.codex
+.agents
+supabase
+brand-assets
+tests
+README.md

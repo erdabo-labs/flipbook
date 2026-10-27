@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { LinkifiedText } from "@/components/ui/LinkifiedText";
 import { FlippyMark } from "@/components/ui/FlippyMark";
 import { formatCurrency } from "@/lib/format";
-import { getEvaluation, getInventoryItems } from "@/lib/db";
+import { getEvaluation, getInventoryItems } from "@/lib/db-client";
 import type { Evaluation, EvaluationKind, Item } from "@/lib/types";
 
 function scoreColor(score: number): string {

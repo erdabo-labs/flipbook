@@ -6,7 +6,7 @@ import {
   getSummaryStats,
   getActiveAcquisitions,
   getRecentTransactions,
-} from "@/lib/db";
+} from "@/lib/db-client";
 import type { AcquisitionPnl, SummaryStats as SummaryStatsType, Transaction } from "@/lib/types";
 import { SummaryStats } from "@/components/SummaryStats";
 import { AcquisitionCard } from "@/components/AcquisitionCard";
@@ -15,7 +15,6 @@ import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { FlipbookLogo } from "@/components/ui/FlipbookLogo";
 import { FlipbookWordmark } from "@/components/ui/FlipbookWordmark";
 import { formatDate, formatPnl, pnlColorClass } from "@/lib/format";
-import { AUTH_STORAGE_KEY } from "@/app/login/page";
 
 type RecentTx = Transaction & { items: { item_id: number; item_name: string; direction: string }[] };
 
@@ -112,16 +111,7 @@ export default function DashboardPage() {
             )}
           </section>
 
-          <button
-            type="button"
-            onClick={() => {
-              localStorage.removeItem(AUTH_STORAGE_KEY);
-              window.location.href = "/login";
-            }}
-            className="mt-8 text-sm text-[#B3AFA5] underline"
-          >
-            Sign out
-          </button>
+
         </>
       )}
     </div>

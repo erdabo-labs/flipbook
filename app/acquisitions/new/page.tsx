@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createAcquisition, createItems } from "@/lib/db";
+import { createAcquisitionWithItems } from "@/lib/db-client";
 import { CATEGORIES, CONDITIONS, SOURCES } from "@/lib/types";
 import type { ItemCondition, SourceType } from "@/lib/types";
 import { Input, Select, Textarea, Toggle } from "@/components/ui/Input";
@@ -48,7 +48,6 @@ export default function NewAcquisitionPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [acquisitionId, setAcquisitionId] = useState<number | null>(null);
   const [singleItem, setSingleItem] = useState(false);
 
   const [deal, setDeal] = useState<DealInfo>({
@@ -76,16 +75,6 @@ export default function NewAcquisitionPage() {
     }
     setSaving(true);
     try {
-      const acquisition = await createAcquisition({
-        description: deal.description.trim(),
-        acquired_date: deal.acquired_date,
-        total_cost: parseFloat(deal.total_cost),
-        source: deal.source || null,
-        source_type: deal.source_type,
-        deal_group: deal.deal_group.trim() || null,
-        notes: deal.notes.trim() || null,
-      });
-      setAcquisitionId(acquisition.id);
       if (singleItem) {
         setItems([
           {
@@ -116,7 +105,6 @@ export default function NewAcquisitionPage() {
   }
 
   async function handleItemsSubmit() {
-    if (!acquisitionId) return;
     setError(null);
     const validItems = items.filter((i) => i.name.trim());
     if (validItems.length === 0) {
@@ -132,7 +120,6 @@ export default function NewAcquisitionPage() {
           const qty = Math.max(1, parseInt(i.quantity, 10) || 1);
           const shares = qty > 1 ? splitAmount(cost, Array(qty).fill(1)) : [cost];
           return shares.map((share, share_idx) => ({
-            acquisition_id: acquisitionId,
             name: qty > 1 ? `${i.name.trim()} (${share_idx + 1}/${qty})` : i.name.trim(),
             category: i.category || null,
             cost_basis: share,
@@ -141,8 +128,15 @@ export default function NewAcquisitionPage() {
             notes: i.notes.trim() || null,
           }));
         });
-      await createItems(rows);
-      router.push(`/acquisitions/${acquisitionId}`);
+      const acquisition = await createAcquisitionWithItems({
+        deal: {
+          description: deal.description.trim(), acquired_date: deal.acquired_date,
+          total_cost: parseFloat(deal.total_cost), source: deal.source || null, source_type: deal.source_type,
+          deal_group: deal.deal_group.trim() || null, notes: deal.notes.trim() || null,
+        },
+        items: rows,
+      });
+      router.push(`/acquisitions/${acquisition.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

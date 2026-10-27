@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getEvaluations } from "@/lib/db";
+import { getEvaluations } from "@/lib/db-client";
 import type { Evaluation } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import Link from "next/link";

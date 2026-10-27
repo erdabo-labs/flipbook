@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { getFlippyProfile, saveFlippyProfile } from "@/lib/db";
+import { getFlippyProfile, saveFlippyProfile } from "@/lib/db-client";
 import { Input, Textarea, Toggle } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/Empty";
