@@ -1,6 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useDraft } from "@/lib/use-draft";
+
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -71,32 +73,32 @@ function EvaluateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialKind = searchParams.get("kind");
-  const [kind, setKind] = useState<EvaluationKind>(
+  const [kind, setKind, clearKind] = useDraft<EvaluationKind>(`evaluate:${searchParams.toString()}:kind`,
     initialKind === "offer" || initialKind === "grade" || initialKind === "grade_deal" || initialKind === "sale"
       ? initialKind
       : "listing"
   );
   const acquisitionId = searchParams.get("acquisition_id") ?? "";
-  const [title, setTitle] = useState("");
-  const [listingUrl, setListingUrl] = useState("");
-  const [price, setPrice] = useState("");
-  const [description, setDescription] = useState("");
-  const [notes, setNotes] = useState("");
+  const [title, setTitle, clearTitle] = useDraft(`evaluate:${searchParams.toString()}:title`, searchParams.get("title") ?? searchParams.get("item_name") ?? "");
+  const [listingUrl, setListingUrl, clearListingUrl] = useDraft(`evaluate:${searchParams.toString()}:listingUrl`, "");
+  const [price, setPrice, clearPrice] = useDraft(`evaluate:${searchParams.toString()}:price`, searchParams.get("price") ?? searchParams.get("cash_amount") ?? "");
+  const [description, setDescription, clearDescription] = useDraft(`evaluate:${searchParams.toString()}:description`, "");
+  const [notes, setNotes, clearNotes] = useDraft(`evaluate:${searchParams.toString()}:notes`, "");
   const [items, setItems] = useState<Item[]>([]);
-  const [itemId, setItemId] = useState(searchParams.get("item_id") ?? "");
+  const [itemId, setItemId, clearItemId] = useDraft(`evaluate:${searchParams.toString()}:itemId`, searchParams.get("item_id") ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Evaluation | null>(null);
   const reEvaluateId = searchParams.get("from");
-  const [saleCtx, setSaleCtx] = useState<{
-    cost_basis: string;
-    category: string;
-    condition: string;
-    platform: string;
-    counterparty: string;
-    transaction_date: string;
-    acquired_date: string;
-  } | null>(null);
+  const saleCtx = kind === "sale" ? {
+    cost_basis: searchParams.get("cost_basis") ?? "",
+    category: searchParams.get("category") ?? "",
+    condition: searchParams.get("condition") ?? "",
+    platform: searchParams.get("platform") ?? "",
+    counterparty: searchParams.get("counterparty") ?? "",
+    transaction_date: searchParams.get("transaction_date") ?? "",
+    acquired_date: searchParams.get("acquired_date") ?? "",
+  } : null;
 
   useEffect(() => {
     if ((kind === "offer" || kind === "grade") && items.length === 0) {
@@ -105,32 +107,12 @@ function EvaluateForm() {
   }, [kind, items.length]);
 
   useEffect(() => {
-    if (kind !== "grade_deal") return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- prefill from URL on mount
-    setTitle(searchParams.get("title") ?? "");
-    setPrice(searchParams.get("price") ?? "");
-  }, [kind, searchParams]);
-
-  useEffect(() => {
-    if (kind !== "sale") return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- prefill from URL on mount
-    setTitle(searchParams.get("item_name") ?? "");
-    setPrice(searchParams.get("cash_amount") ?? "");
-    setSaleCtx({
-      cost_basis: searchParams.get("cost_basis") ?? "",
-      category: searchParams.get("category") ?? "",
-      condition: searchParams.get("condition") ?? "",
-      platform: searchParams.get("platform") ?? "",
-      counterparty: searchParams.get("counterparty") ?? "",
-      transaction_date: searchParams.get("transaction_date") ?? "",
-      acquired_date: searchParams.get("acquired_date") ?? "",
-    });
-  }, [kind, searchParams]);
-
-  useEffect(() => {
     if (!reEvaluateId) return;
+    // A recovered draft takes precedence over the original evaluation.
+    try { if (sessionStorage.getItem(`flipbook:draft:v1:evaluate:${searchParams.toString()}:title`) !== null) return; } catch { /* storage optional */ }
+    let active = true;
     getEvaluation(Number(reEvaluateId)).then((e) => {
-      if (!e) return;
+      if (!e || !active) return;
       setKind(e.kind);
       setTitle(e.title);
       setListingUrl(e.listing_url ?? "");
@@ -138,17 +120,20 @@ function EvaluateForm() {
       setDescription(e.description ?? "");
       setNotes(e.notes ?? "");
       if (e.item_id) setItemId(String(e.item_id));
-    });
-  }, [reEvaluateId]);
+    }).catch((e) => { if (active) setError(e.message); });
+    return () => { active = false; };
+  }, [reEvaluateId, searchParams, setKind, setTitle, setListingUrl, setPrice, setDescription, setNotes, setItemId]);
 
+  const previousGradeItem = useRef<number | null>(null);
   const selectedItem = items.find((i) => i.id === Number(itemId));
 
   useEffect(() => {
     if (kind === "grade" && selectedItem) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- autofill price when item picked
-      setPrice(String(selectedItem.cost_basis));
+      const changedItem = previousGradeItem.current !== null && previousGradeItem.current !== selectedItem.id;
+      previousGradeItem.current = selectedItem.id;
+      if (changedItem || !price) setPrice(String(selectedItem.cost_basis));
     }
-  }, [kind, selectedItem]);
+  }, [kind, selectedItem, price, setPrice]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -197,6 +182,7 @@ function EvaluateForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Evaluation failed");
+      clearKind(); clearTitle(); clearListingUrl(); clearPrice(); clearDescription(); clearNotes(); clearItemId();
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -206,9 +192,9 @@ function EvaluateForm() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
+    <div className="page-content">
       <div className="mb-6 flex items-center justify-between">
-        <button type="button" onClick={() => router.back()} className="text-sm font-medium text-[#8C887D]">
+        <button type="button" onClick={() => { if (window.history.length > 1) router.back(); else router.push("/"); }} className="text-sm font-medium text-[#8C887D]">
           Cancel
         </button>
         <h1 className="text-[14px] font-bold">
@@ -257,6 +243,7 @@ function EvaluateForm() {
 
       {error && <p className="mb-4 text-sm text-[#DC2626]">{error}</p>}
 
+      <p className="mb-4 text-xs text-[#6B6A62]">Draft saved in this tab. <button type="button" className="min-h-11 underline" onClick={() => { clearKind(); clearTitle(); clearListingUrl(); clearPrice(); clearDescription(); clearNotes(); clearItemId(); }}>Discard draft</button></p>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {kind === "listing" ? (
           <>

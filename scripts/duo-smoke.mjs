@@ -1,0 +1,81 @@
+const { chromium } = await import(process.env.FLIPBOOK_PLAYWRIGHT_MODULE || 'playwright');
+import assert from 'node:assert/strict';
+(async () => {
+ const browser = await chromium.launch({headless:true});
+ const context = await browser.newContext({viewport:{width:382,height:618},serviceWorkers:'block'});
+ const page = await context.newPage();
+ const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+ const item={id:1,acquisition_id:1,name:'Camera',category:'Electronics',cost_basis:100,status:'inventory',used_personally:false,condition:'good',notes:null,listed_price:null,pending_price:null,bundle_id:null,bundle_label:null,created_at:'2026-10-27',acquisition_desc:'Camera deal',acquired_date:'2026-10-01',deal_group:null};
+ const deal={id:1,description:'Camera deal',acquired_date:'2026-10-01',total_cost:100,source:'Marketplace',source_type:'flip_purchase',deal_group:null,notes:null,created_at:'2026-10-01',items_in_inventory:1,total_items:1,realized_pnl:0,cash_received:0,listed_value:0,pending_value:0};
+ const evaluation={id:1,kind:'listing',title:'Camera evaluation',price:100,score:8,verdict:'Good value',created_at:'2026-10-01',notes:null,description:'Camera',listing_url:null};
+ const responses={getAcquisitionsPnl:[deal],getAcquisition:deal,getAcquisitionPnl:deal,getItemsForAcquisition:[item],getTransactionsForAcquisition:[],getInventory:[item],getAcquisitionsLite:[deal],getInventoryItems:[item],getEvaluations:[evaluation],getEvaluation:evaluation,getEvaluationMessages:[]};
+ let mutations=0;
+ await page.route('**/api/**', async route=>{
+  const op=new URL(route.request().url()).pathname.split('/').pop();
+  if (!op.startsWith('get')) { mutations++; return route.fulfill({status:503,json:{error:'Mock save unavailable'}}); }
+  return route.fulfill({json:{data:responses[op]??[]}});
+ });
+ const origin=process.env.FLIPBOOK_TEST_ORIGIN || 'http://127.0.0.1:3100';
+ await page.goto(origin+'/acquisitions/new');
+ await page.waitForLoadState('networkidle');
+
+ await page.getByLabel('Description',{exact:true}).fill('Duo draft');
+ await page.getByLabel('Total cost',{exact:true}).fill('125');
+ const originalURL=page.url();
+ await page.setViewportSize({width:951,height:620});
+ assert.equal(page.url(),originalURL);
+ assert.equal(await page.getByLabel('Description',{exact:true}).inputValue(),'Duo draft');
+ assert.equal(await page.getByLabel('Deal summary').isVisible(),true);
+ await page.reload();
+ await page.waitForLoadState('networkidle');
+
+ await page.waitForFunction(()=>document.querySelector('input')?.value==='Duo draft');
+ await page.setViewportSize({width:382,height:618});
+ assert.equal(await page.getByLabel('Description',{exact:true}).inputValue(),'Duo draft');
+ assert.equal(await page.getByLabel('Deal summary').isVisible(),false);
+ await page.getByRole('button',{name:'Discard draft'}).click();
+ assert.equal(await page.getByLabel('Description',{exact:true}).inputValue(),'');
+ await page.goto(origin+'/acquisitions/1');
+ await page.getByRole('heading',{name:'Camera deal',exact:true}).waitFor();
+ assert.equal(await page.getByRole('complementary',{name:'Deals'}).isVisible(),false);
+ await page.setViewportSize({width:951,height:620});
+ assert.equal(await page.getByRole('complementary',{name:'Deals'}).isVisible(),true);
+ assert.equal(await page.locator('.collection-entry[aria-current="page"]').count(),1);
+ const main=await page.locator('main').boundingBox();
+ const nav=await page.getByRole('navigation',{name:'Main navigation'}).boundingBox();
+ assert(main && nav);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.screenshot({path:'/tmp/flipbook-deals-wide.png',fullPage:true});
+ await page.goto(origin+'/inventory?item=1');
+ await page.getByRole('complementary',{name:'Selected item'}).waitFor();
+ assert.equal(await page.locator('.inventory-list').isVisible(),true);
+ await page.setViewportSize({width:382,height:618});
+ assert.equal(await page.locator('.inventory-list').isVisible(),false);
+ await page.getByRole('button',{name:'Camera',exact:false}).first().click();
+ await page.getByRole('dialog',{name:'Item actions'}).waitFor();
+ assert.equal(await page.evaluate(()=>document.body.style.overflow),'hidden');
+ await page.keyboard.press('Escape');
+ assert.equal(await page.getByRole('dialog').count(),0);
+ await page.getByRole('button',{name:'Add',exact:true}).click();
+ const dialog=page.getByRole('dialog'); await dialog.waitFor();
+ await page.keyboard.press('Shift+Tab');
+ assert.equal(await page.getByRole('button',{name:'Cancel',exact:true}).evaluate(el=>el===document.activeElement),true);
+ await page.keyboard.press('Escape');
+ assert.equal(await page.getByRole('button',{name:'Add',exact:true}).evaluate(el=>el===document.activeElement),true);
+ await page.goto(origin+'/transactions/new?item_id=1');
+ await page.waitForLoadState('networkidle');
+ await page.getByLabel('Sale price',{exact:true}).fill('180');
+ await page.reload();
+ await page.waitForFunction(()=>Array.from(document.querySelectorAll('input')).some(input=>input.value==='180'));
+ await page.setViewportSize({width:951,height:620});
+ assert.equal(await page.getByLabel('Transaction summary').isVisible(),true);
+ for (const width of [382,385,594,669,780,951]) {
+  await page.setViewportSize({width,height:width===594?368:620});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`overflow at ${width}px`);
+  assert.equal(await page.getByLabel('Sale price',{exact:true}).inputValue(),'180');
+ }
+ assert.equal(mutations,0);
+ assert.deepEqual(errors,[]);
+ console.log('PASS: draft restore/discard, resize continuity, split detail/selection, Stock inspector, focus trap/restoration, no overflow, no mutations or browser errors');
+ await browser.close();
+})().catch(error=>{console.error(error);process.exit(1)});

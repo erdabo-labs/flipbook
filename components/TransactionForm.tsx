@@ -1,5 +1,7 @@
 "use client";
 
+import { useDraft } from "@/lib/use-draft";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -31,16 +33,16 @@ export function TransactionForm({
 }) {
   const router = useRouter();
   const [acquisitions, setAcquisitions] = useState<{ id: number; description: string; acquired_date: string }[]>([]);
-  const [acquisitionId, setAcquisitionId] = useState<number | null>(initialAcquisitionId);
+  const [acquisitionId, setAcquisitionId, clearAcquisitionId] = useDraft<number | null>(`transaction:${initialAcquisitionId}:${initialItemIds.join(",")}:${initialKind}:acquisitionId`, initialAcquisitionId);
   const [items, setItems] = useState<Item[]>([]);
-  const [kind, setKind] = useState<Kind>(initialKind);
-  const [selectedIds, setSelectedIds] = useState<number[]>(initialItemIds);
-  const [cashAmount, setCashAmount] = useState(initialCashAmount ?? "");
-  const [receivedItemName, setReceivedItemName] = useState("");
-  const [date, setDate] = useState(today);
-  const [platform, setPlatform] = useState("");
-  const [counterparty, setCounterparty] = useState("");
-  const [notes, setNotes] = useState("");
+  const [kind, setKind, clearKind] = useDraft<Kind>(`transaction:${initialAcquisitionId}:${initialItemIds.join(",")}:${initialKind}:kind`, initialKind);
+  const [selectedIds, setSelectedIds, clearSelectedIds] = useDraft<number[]>(`transaction:${initialAcquisitionId}:${initialItemIds.join(",")}:${initialKind}:selectedIds`, initialItemIds);
+  const [cashAmount, setCashAmount, clearCashAmount] = useDraft(`transaction:${initialAcquisitionId}:${initialItemIds.join(",")}:${initialKind}:cashAmount`, initialCashAmount ?? "");
+  const [receivedItemName, setReceivedItemName, clearReceivedItemName] = useDraft(`transaction:${initialAcquisitionId}:${initialItemIds.join(",")}:${initialKind}:receivedItemName`, "");
+  const [date, setDate, clearDate] = useDraft(`transaction:${initialAcquisitionId}:${initialItemIds.join(",")}:${initialKind}:date`, today);
+  const [platform, setPlatform, clearPlatform] = useDraft(`transaction:${initialAcquisitionId}:${initialItemIds.join(",")}:${initialKind}:platform`, "");
+  const [counterparty, setCounterparty, clearCounterparty] = useDraft(`transaction:${initialAcquisitionId}:${initialItemIds.join(",")}:${initialKind}:counterparty`, "");
+  const [notes, setNotes, clearNotes] = useDraft(`transaction:${initialAcquisitionId}:${initialItemIds.join(",")}:${initialKind}:notes`, "");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +132,7 @@ export function TransactionForm({
       } else if (kind === "kept") {
         await markItemKept(selectedIds[0], notes.trim() || null);
       }
+      clearAcquisitionId(); clearKind(); clearSelectedIds(); clearCashAmount(); clearReceivedItemName(); clearDate(); clearPlatform(); clearCounterparty(); clearNotes();
       const dest = acquisitionId ? `/acquisitions/${acquisitionId}` : "/inventory";
       router.push(dest);
     } catch (err) {
@@ -145,7 +148,8 @@ export function TransactionForm({
   }, 0);
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="form-workspace"><form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <p className="text-xs text-[#6B6A62]">Draft saved in this tab. <button type="button" className="min-h-11 underline" onClick={() => { clearAcquisitionId(); clearKind(); clearSelectedIds(); clearCashAmount(); clearReceivedItemName(); clearDate(); clearPlatform(); clearCounterparty(); clearNotes(); }}>Discard draft</button></p>
       {error && <p className="text-sm text-[#DC2626]">{error}</p>}
 
       <div className="flex gap-2">
@@ -281,6 +285,12 @@ export function TransactionForm({
             ? `Record sale${cashAmount ? ` · +${formatCurrency(parseFloat(cashAmount) || 0)}` : ""}`
             : "Save"}
       </Button>
-    </form>
+    </form><aside className="form-summary" aria-label="Transaction summary">
+      <h2 className="mb-3 font-bold">Transaction summary</h2>
+      <p className="mb-2 capitalize">{kind === "kept" ? "Keep personally" : kind}</p>
+      <p className="text-sm">{selectedIds.length} selected · cost {formatCurrency(total)}</p>
+      {kind !== "kept" && <p className="mt-3 font-mono text-xl">Cash {formatCurrency(parseFloat(cashAmount) || 0)}</p>}
+      {kind === "trade" && <p className="mt-3 break-words text-sm">Receiving: {receivedItemName || "Not entered"}</p>}
+    </aside></div>
   );
 }

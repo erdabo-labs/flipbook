@@ -1,8 +1,11 @@
 "use client";
 
+import { useDraft } from "@/lib/use-draft";
+import { useModal } from "@/lib/use-modal";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const ITEMS = [
   { href: "/", label: "Home", icon: "home" },
@@ -52,7 +55,14 @@ function Icon({ name }: { name: string }) {
 export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const [locations, setLocations] = useDraft<Record<string, string>>("navigation", {});
+  useEffect(() => {
+    const section = ITEMS.find(item => item.href !== "/" && pathname.startsWith(item.href));
+    if (!section || pathname.endsWith("/new")) return;
+    setLocations(previous => previous[section.href] === pathname ? previous : { ...previous, [section.href]: pathname });
+  }, [pathname, setLocations]);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const dialogRef = useModal(sheetOpen, () => setSheetOpen(false));
 
   function closeSheet() {
     setSheetOpen(false);
@@ -65,14 +75,15 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#ECEAE3] bg-white pb-[env(safe-area-inset-bottom)]">
-        <div className="relative flex h-[86px] items-stretch justify-around">
+      <nav aria-label="Main navigation" className="bottom-navigation fixed bottom-0 left-0 right-0 z-40 border-t border-[#ECEAE3] bg-white pb-[env(safe-area-inset-bottom)]">
+        <div className="relative mx-auto flex h-[86px] max-w-2xl items-stretch justify-around">
           {ITEMS.slice(0, 2).map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                aria-current={active ? "page" : undefined}
+                href={active ? item.href : locations[item.href] ?? item.href}
                 className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                   active ? "text-[#047857]" : "text-[#B3AFA5]"
                 }`}
@@ -99,7 +110,8 @@ export function BottomNav() {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                aria-current={active ? "page" : undefined}
+                href={active ? item.href : locations[item.href] ?? item.href}
                 className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                   active ? "text-[#047857]" : "text-[#B3AFA5]"
                 }`}
@@ -114,11 +126,11 @@ export function BottomNav() {
 
       {sheetOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end bg-[rgba(26,26,23,.32)]"
+          className="sheet-backdrop fixed inset-0 z-50 flex items-end bg-[rgba(26,26,23,.32)]"
           onClick={closeSheet}
         >
           <div
-            className="w-full rounded-t-[26px] bg-white p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+            ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Add to Flipbook" className="mobile-sheet w-full rounded-t-[26px] bg-white p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-[#ECEAE3]" />

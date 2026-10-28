@@ -19,9 +19,9 @@ function NewTransactionContent() {
   const cash = searchParams.get("cash");
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
+    <div className="page-content form-page">
       <div className="mb-6 flex items-center justify-between">
-        <button type="button" onClick={() => router.back()} className="text-sm font-medium text-[#8C887D]">
+        <button type="button" onClick={() => { if (window.history.length > 1) router.back(); else router.push("/"); }} className="text-sm font-medium text-[#8C887D]">
           Cancel
         </button>
         <h1 className="text-[14px] font-bold">Record sale</h1>
