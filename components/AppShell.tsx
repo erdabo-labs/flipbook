@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { PwaStatus } from "@/components/PwaStatus";
 import { BottomNav } from "@/components/BottomNav";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -10,8 +9,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <PwaStatus />
-      <main id="main-content" className={`app-main flex-1 ${isFullScreenForm ? "" : "with-navigation"}`}>{children}</main>
+      <main className={`flex-1 ${isFullScreenForm ? "" : "pb-20 md:pb-6"}`}>{children}</main>
       {!isFullScreenForm && <BottomNav />}
     </>
   );

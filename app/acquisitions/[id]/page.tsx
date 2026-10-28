@@ -198,7 +198,7 @@ export default function AcquisitionDetailPage() {
   const hasInventory = pnl.items_in_inventory > 0;
 
   return (
-    <div className="page-content">
+    <div className="mx-auto max-w-2xl px-4 py-6">
       <Link href="/acquisitions" className="mb-3 inline-block text-sm font-medium text-[#8C887D]">
         ‹ Deals
       </Link>

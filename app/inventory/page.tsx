@@ -1,8 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ItemRow } from "@/components/ItemRow";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getInventory } from "@/lib/db-client";
 import type { CurrentInventoryRow } from "@/lib/types";
@@ -11,10 +9,7 @@ import { StatusBadge } from "@/components/ui/Badge";
 import { LoadingState, EmptyState } from "@/components/ui/Empty";
 import { LinkButton } from "@/components/ui/Button";
 
-function InventoryContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const selectedId = Number(searchParams.get("item"));
+export default function InventoryPage() {
   const [rows, setRows] = useState<CurrentInventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,10 +67,8 @@ function InventoryContent() {
     return Array.from(map.values());
   }, [rows]);
 
-  const selected = rows.find(row => row.id === selectedId);
   return (
-    <div className={`inventory-workspace ${selected ? "has-selection" : ""}`}>
-    <div className="page-content inventory-list">
+    <div className="mx-auto max-w-2xl px-4 py-6">
       <h1 className="mb-4 text-[26px] font-extrabold tracking-[-0.03em]">Inventory</h1>
 
       {loading && <LoadingState />}
@@ -111,7 +104,7 @@ function InventoryContent() {
                       <div key={item.id} className="rounded-[14px] border border-[#ECEAE3] bg-white p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <Link href={`/inventory?item=${item.id}`} scroll={false} aria-current={selectedId === item.id ? "page" : undefined} className="block min-h-11 py-2 text-[14px] font-semibold text-[#047857] underline">{item.name}</Link>
+                            <p className="truncate text-[14px] font-semibold text-[#1A1A17]">{item.name}</p>
                             <p className="text-[12px] text-[#8C887D]">
                               {item.category ?? "Uncategorized"} &middot; cost {formatCurrency(item.cost_basis)}
                               {item.status === "listed" && item.listed_price != null && (
@@ -151,17 +144,5 @@ function InventoryContent() {
         </>
       )}
     </div>
-    {selected && <aside className="inventory-inspector page-content" aria-label="Selected item">
-      <Link href="/inventory" scroll={false} className="mb-4 inline-flex min-h-11 items-center text-sm font-semibold text-[#047857]">‹ Inventory</Link>
-      <h2 className="mb-3 text-xl font-bold">{selected.name}</h2>
-      <p className="mb-4 text-sm text-[#6B6A62]">Tap the item below to edit, list, bundle, or update its status.</p>
-      <ItemRow key={selected.id} item={selected} onChanged={() => { getInventory().then(setRows).catch(e => setError(e.message)); router.refresh(); }} />
-      <p className="my-4 text-sm">{selected.notes || "No notes yet."}</p>
-      <LinkButton href={saleLinkFor(selected)}>Record sale</LinkButton>
-    </aside>}
-    </div>
   );
-}
-export default function InventoryPage() {
-  return <Suspense fallback={<LoadingState />}><InventoryContent /></Suspense>;
 }

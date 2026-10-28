@@ -40,7 +40,7 @@ export default function MetricsPage() {
   const maxAbsPnl = Math.max(1, ...recentMonths.map((m) => Math.abs(m.realized_pnl)));
 
   return (
-    <div className="page-content">
+    <div className="mx-auto max-w-2xl px-4 py-6">
       <h1 className="mb-6 text-[26px] font-extrabold tracking-[-0.03em]">Metrics</h1>
 
       {loading && <LoadingState />}

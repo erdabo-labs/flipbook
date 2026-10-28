@@ -37,7 +37,7 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="page-content dashboard-content">
+    <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FlipbookLogo className="h-6 w-6" />
@@ -60,9 +60,8 @@ export default function DashboardPage() {
       {!loading && !error && stats && (
         <>
           <SummaryStats stats={stats} />
-          <div className="dashboard-sections">
 
-          <section className="mt-8 dashboard-section">
+          <section className="mt-8">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-[14px] font-bold">Active deals</h2>
               <LinkButton href="/acquisitions" variant="ghost" className="!min-h-0 !p-0 text-sm font-semibold text-[#047857]">
@@ -84,7 +83,7 @@ export default function DashboardPage() {
             )}
           </section>
 
-          <section className="mt-8 dashboard-section">
+          <section className="mt-8">
             <h2 className="mb-3 text-[14px] font-bold">Recent activity</h2>
             {recent.length === 0 ? (
               <EmptyState title="No transactions yet" description="Sales and trades will show up here." />
@@ -111,7 +110,8 @@ export default function DashboardPage() {
               </div>
             )}
           </section>
-          </div>
+
+
         </>
       )}
     </div>

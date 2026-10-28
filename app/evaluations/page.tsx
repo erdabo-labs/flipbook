@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getEvaluations } from "@/lib/db-client";
 import type { Evaluation } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -18,6 +19,7 @@ function scoreColor(score: number): string {
 }
 
 export default function EvaluationsPage() {
+  const router = useRouter();
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export default function EvaluationsPage() {
   );
 
   return (
-    <div className="page-content">
+    <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
       <div className="mb-1 flex items-center justify-between">
         <h1 className="flex items-center gap-2 text-[26px] font-extrabold tracking-[-0.03em] text-[#1A1A17]">
           <FlippyMark className="h-6 w-6" />
@@ -67,7 +69,7 @@ export default function EvaluationsPage() {
           ) : (
             <div className="flex flex-col gap-3">
               {evaluations.map((e) => (
-                <Link key={e.id} href={`/evaluations/${e.id}`}><Card className="min-w-0">
+                <Card key={e.id} onClick={() => router.push(`/evaluations/${e.id}`)} className="min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-[14px] font-semibold text-[#1A1A17]">{e.title}</p>
@@ -85,7 +87,7 @@ export default function EvaluationsPage() {
                     {e.cost_usd != null && <p className="text-[11px] text-[#B3AFA5]">${e.cost_usd.toFixed(4)}</p>}
                     {e.notes && <p className="truncate text-[11px] text-[#8C887D]">📝 {e.notes}</p>}
                   </div>
-                </Card></Link>
+                </Card>
               ))}
             </div>
           )}

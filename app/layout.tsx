@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
@@ -15,11 +15,8 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
 });
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#FAF9F6" };
-
 export const metadata: Metadata = {
   title: "Flipbook",
-  appleWebApp: { capable: true, title: "Flipbook", statusBarStyle: "default" },
   description: "Track local buy/sell/trade deals, with Flippy as your AI sidekick",
 };
 

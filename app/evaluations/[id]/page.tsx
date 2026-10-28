@@ -1,7 +1,5 @@
 "use client";
 
-import { useDraft } from "@/lib/use-draft";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -33,7 +31,7 @@ export default function EvaluationDetailPage() {
   const [notes, setNotes] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [messages, setMessages] = useState<EvaluationMessage[]>([]);
-  const [question, setQuestion] = useDraft(`chat:${id}:question`, "");
+  const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -82,7 +80,6 @@ export default function EvaluationDetailPage() {
       const msgs = await getEvaluationMessages(evaluation.id);
       setMessages(msgs);
     } catch (err) {
-      setQuestion(text);
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setAsking(false);
@@ -111,14 +108,13 @@ export default function EvaluationDetailPage() {
   }
 
   if (loading) return <LoadingState />;
-  if (error && !evaluation) return <p className="p-6 text-sm text-[#DC2626]">{error}</p>;
+  if (error) return <p className="p-6 text-sm text-[#DC2626]">{error}</p>;
   if (!evaluation) return <p className="p-6 text-sm text-[#8C887D]">Evaluation not found.</p>;
 
   const e = evaluation;
 
   return (
-    <div className="page-content">
-      {error && <p role="alert" className="mb-4 text-sm text-red-600">{error}</p>}
+    <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
       <Link href="/evaluations" className="mb-3 inline-block text-sm font-medium text-[#8C887D]">
         ‹ Evaluations
       </Link>

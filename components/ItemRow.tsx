@@ -1,7 +1,5 @@
 "use client";
 
-import { useModal } from "@/lib/use-modal";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Item, ItemCondition } from "@/lib/types";
@@ -32,10 +30,9 @@ const CONDITION_LABELS: Record<string, string> = {
   parts: "Parts",
 };
 
-export function ItemRow({ item, onChanged }: { item: Omit<Item, "created_at">; onChanged: () => void }) {
+export function ItemRow({ item, onChanged }: { item: Item; onChanged: () => void }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const dialogRef = useModal(open, () => setOpen(false));
   const [editing, setEditing] = useState(false);
   const [splitting, setSplitting] = useState(false);
   const [listing, setListing] = useState(false);
@@ -334,7 +331,7 @@ export function ItemRow({ item, onChanged }: { item: Omit<Item, "created_at">; o
 
       {open && (
         <div
-          className="sheet-backdrop fixed inset-0 z-50 flex items-end bg-[rgba(26,26,23,.32)]"
+          className="fixed inset-0 z-50 flex items-end bg-[rgba(26,26,23,.32)]"
           onClick={() => {
             setOpen(false);
             setEditing(false);
@@ -345,7 +342,7 @@ export function ItemRow({ item, onChanged }: { item: Omit<Item, "created_at">; o
           }}
         >
           <div
-            ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Item actions" className="mobile-sheet w-full rounded-t-[26px] bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            className="w-full rounded-t-[26px] bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
             onClick={(e) => e.stopPropagation()}
           >
             {editing ? (
