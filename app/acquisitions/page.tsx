@@ -1,5 +1,7 @@
 "use client";
 
+import { useDraft } from "@/lib/use-draft";
+
 import { useEffect, useMemo, useState } from "react";
 import { getAcquisitionsPnl } from "@/lib/db-client";
 import type { AcquisitionPnl } from "@/lib/types";
@@ -13,7 +15,7 @@ export default function AcquisitionsListPage() {
   const [acquisitions, setAcquisitions] = useState<AcquisitionPnl[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useDraft<Filter>("app/acquisitions/page.tsx:filter", "all");
 
   useEffect(() => {
     getAcquisitionsPnl()
@@ -29,7 +31,7 @@ export default function AcquisitionsListPage() {
   }, [acquisitions, filter]);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <div className="page-content">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-[26px] font-extrabold tracking-[-0.03em]">Deals</h1>
         <LinkButton href="/acquisitions/new">+ Log deal</LinkButton>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useDraft } from "@/lib/use-draft";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAcquisitionWithItems } from "@/lib/db-client";
@@ -45,12 +47,12 @@ function emptyItem(): DraftItem {
 
 export default function NewAcquisitionPage() {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep, clearStep] = useDraft<1 | 2>("app/acquisitions/new/page.tsx:step", 1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [singleItem, setSingleItem] = useState(false);
+  const [singleItem, setSingleItem, clearSingleItem] = useDraft("app/acquisitions/new/page.tsx:singleItem", false);
 
-  const [deal, setDeal] = useState<DealInfo>({
+  const [deal, setDeal, clearDeal] = useDraft<DealInfo>("app/acquisitions/new/page.tsx:deal", {
     description: "",
     acquired_date: today,
     total_cost: "",
@@ -60,7 +62,7 @@ export default function NewAcquisitionPage() {
     notes: "",
   });
 
-  const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
+  const [items, setItems, clearItems] = useDraft<DraftItem[]>("app/acquisitions/new/page.tsx:items", [emptyItem()]);
 
   const totalCostNum = parseFloat(deal.total_cost) || 0;
   const othersCost = items.slice(1).reduce((sum, i) => sum + (parseFloat(i.cost_basis) || 0), 0);
@@ -136,6 +138,7 @@ export default function NewAcquisitionPage() {
         },
         items: rows,
       });
+      clearStep(); clearSingleItem(); clearDeal(); clearItems();
       router.push(`/acquisitions/${acquisition.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -145,9 +148,9 @@ export default function NewAcquisitionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
+    <div className="page-content form-page">
       <div className="mb-6 flex items-center justify-between">
-        <button type="button" onClick={() => router.back()} className="text-sm font-medium text-[#8C887D]">
+        <button type="button" onClick={() => { if (window.history.length > 1) router.back(); else router.push("/"); }} className="text-sm font-medium text-[#8C887D]">
           Cancel
         </button>
         <h1 className="text-[14px] font-bold">Log a deal</h1>
@@ -155,6 +158,8 @@ export default function NewAcquisitionPage() {
       </div>
       <p className="mb-6 text-sm text-[#8C887D]">Step {step} of 2 — {step === 1 ? "Deal info" : "Items"}</p>
 
+      <p className="mb-4 text-xs text-[#6B6A62]">Draft saved in this tab. <button type="button" className="min-h-11 underline" onClick={() => { clearStep(); clearSingleItem(); clearDeal(); clearItems(); }}>Discard draft</button></p>
+      <div className="form-workspace"><div>
       {error && <p className="mb-4 text-sm text-[#DC2626]">{error}</p>}
 
       {step === 1 && (
@@ -347,6 +352,13 @@ export default function NewAcquisitionPage() {
           </Button>
         </div>
       )}
+      </div><aside className="form-summary" aria-label="Deal summary">
+        <h2 className="mb-3 font-bold">Deal summary</h2>
+        <p className="mb-2 break-words">{deal.description || "Untitled deal"}</p>
+        <p className="font-mono text-xl">{formatCurrency(totalCostNum)}</p>
+        <p className="mt-3 text-sm text-[#6B6A62]">{items.filter(item => item.name.trim()).length} named item(s) · {deal.acquired_date}</p>
+        <p className="mt-3 text-sm text-[#6B6A62]">Review the items in step 2 before saving.</p>
+      </aside></div>
     </div>
   );
 }
